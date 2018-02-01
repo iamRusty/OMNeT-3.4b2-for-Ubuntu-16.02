@@ -1,0 +1,148 @@
+%description:
+Test operators in NED, with non-const parameters.
+
+%file: {}.ned
+
+simple {Simple}
+   parameters:
+      p00, p01, p02, p03, p04, p05, p06, p07, p08, p09,
+      p10, p11, p12, p13, p14, p15, p16, p17, p18, p19,
+      p20, p21, p22, p23, p24, p25, p26, p27, p28, p29,
+      p30, p31, p32, p33, p34, p35, p36, p37, p38, p39,
+      p40, p41, p42, p43, p44, p45, p46, p47;
+endsimple
+
+network {network}: {Simple}
+   parameters:
+      p00 = -3,      // unary minus or negative constant
+      p01 = -(4+1),  // unary minus
+
+      p02 = ! true,  // negation
+      p03 = ! false, // negation
+      p04 = ! 0,     // negation
+      p05 = ! 3,     // negation
+
+      p06 = ~3,      // bitwise complement (yields positive number)
+      p07 = 12 ^ 3,  // power of
+      p08 = 12 * 3,  // multiply
+      p09 = 12 / 3,  // divide
+      p10 = 12 % 5,  // modulus
+      p11 = 12 + 3,  // add
+      p12 = 12 - 3,  // subtract
+
+      p13 = 10 << 2, // bitwise shifting
+      p14 = 10 >> 2, // bitwise shifting
+
+      p15 = 10 & 3,  // bitwise and
+      p16 = 10 | 3,  // bitwise or
+      p17 = 10 # 3,  // bitwise xor
+
+      p18 = 8 == 3, // equal
+      p19 = 8 == 8, // equal
+
+      p20 = 8 != 3, // not equal
+      p21 = 8 != 8, // not equal
+
+      p22 = 8 > 3,  // greater
+      p23 = 3 > 8,  // greater
+      p24 = 8 > 8,  // greater
+
+      p25 = 8 >= 3, // greater or equal
+      p26 = 3 >= 8, // greater or equal
+      p27 = 8 >= 8, // greater or equal
+
+      p28 = 8 < 3,  // less
+      p29 = 3 < 8,  // less
+      p30 = 8 < 8,  // less
+
+      p31 = 8 <= 3, // less or equal
+      p32 = 3 <= 8, // less or equal
+      p33 = 8 <= 8, // less or equal
+
+      p34 = 8 && 3, // logical and
+      p35 = 8 && 0, // logical and
+      p36 = 0 && 3, // logical and
+      p37 = 0 && 0, // logical and
+
+      p38 = 8 || 3, // logical or
+      p39 = 8 || 0, // logical or
+      p40 = 0 || 3, // logical or
+      p41 = 0 || 0, // logical or
+
+      p42 = 8 ## 3, // logical xor
+      p43 = 8 ## 0, // logical xor
+      p44 = 0 ## 3, // logical xor
+      p45 = 0 ## 0, // logical xor
+
+      p46 = true ? 5 : 2,  // the C/C++ ``inline if''
+      p47 = false ? 5 : 2; // the C/C++ ``inline if''
+
+endnetwork
+
+%file: {}.cc
+
+#include <omnetpp.h>
+
+class {Simple} : public cSimpleModule
+{
+    Module_Class_Members({Simple},cSimpleModule,16384)
+    virtual void activity();
+};
+
+Define_Module({Simple});
+
+void {Simple}::activity()
+{
+    for (int i=0; i<params(); i++)
+        ev << par(i).name() << "=" << (double)par(i) << endl;
+}
+
+%contains-regex: stdout
+p00=-3
+p01=-5
+p02=0
+p03=1
+p04=1
+p05=0
+p06=[0-9eE+.]+
+p07=1728
+p08=36
+p09=4
+p10=2
+p11=15
+p12=9
+p13=40
+p14=2
+p15=2
+p16=11
+p17=9
+p18=0
+p19=1
+p20=1
+p21=0
+p22=1
+p23=0
+p24=0
+p25=1
+p26=0
+p27=1
+p28=0
+p29=1
+p30=0
+p31=0
+p32=1
+p33=1
+p34=1
+p35=0
+p36=0
+p37=0
+p38=1
+p39=1
+p40=1
+p41=0
+p42=0
+p43=1
+p44=1
+p45=0
+p46=5
+p47=2

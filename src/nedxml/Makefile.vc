@@ -1,0 +1,196 @@
+#
+# Global definitions
+#
+!include ..\..\configuser.vc
+
+!if "$(LIB_SUFFIX)"==".dll"
+CFLAGS=$(CFLAGS) /DWIN32_DLL
+!endif
+
+#
+# Local definitions
+#
+COPTS=$(CFLAGS) $(XML_CFLAGS) /I. /Fd"nedxml.pdb"
+
+OBJS= nedelements.obj nedelement.obj nederror.obj \
+      nedvalidator.obj neddtdvalidator.obj neddtdvalidator1.obj \
+      nedbasicvalidator.obj nedsemanticvalidator.obj nedcompiler.obj \
+      cppgenerator.obj cppmsggenerator.obj cppexprgenerator.obj nedgenerator.obj \
+      nedfilebuffer.obj nedparser.obj ned.tab.obj lex.yy.obj nedutil.obj \
+      xmlgenerator.obj nedxmlparser.obj nedsaxhandler.obj saxparser_$(XMLPARSER).obj \
+
+#
+# Automatic rules
+#
+.SUFFIXES : .cc
+
+.cc.obj:
+	$(CXX) /Fo"$@" $(COPTS) /c /Tp $<
+
+
+#
+# Targets (TBD: build dll)
+#
+all : nedxml.lib
+
+nedxml.lib : unistd.h $(OBJS)
+	$(AR) /out:nedxml.lib $(OBJS)
+	copy nedxml.lib $(OMNETPP_LIB_DIR:/=\)
+	- copy /b nedxml.pdb $(OMNETPP_LIB_DIR:/=\) 2>nul
+
+nedelements.cc nedelements.h nedvalidator.cc nedvalidator.h : dtdclassgen.pl ned.dtd
+	perl dtdclassgen.pl ned.dtd
+
+ned.tab.h ned.tab.cc : ned.y
+	$(YACC:/=\) -p nedyy -b ned -d ned.y
+	copy ned.tab.c ned.tab.cc
+	del ned.tab.c
+
+lex.yy.cc: ned.lex
+	$(LEX:/=\) -Pnedyy ned.lex
+	copy lex.nedyy.c lex.yy.cc
+	del lex.nedyy.c
+
+unistd.h:
+	echo. > unistd.h
+
+doc:
+	$(DOXYGEN:/=\) doxy.cfg
+
+depend:
+	$(MAKEDEPEND) -I. -fMakefile.vc -- *.cc
+
+clean:
+	- del unistd.h
+	- del *.obj neddata.lib 2> nul
+	- del *.ilk *.idb *.pdb 2> nul
+
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+cppexprgenerator.obj: cppexprgenerator.cc \
+  nedcompiler.h \
+  cppexprgenerator.h \
+  nederror.h \
+  nedelements.h \
+  nedelement.h
+cppgenerator.obj: cppgenerator.cc \
+  nedelements.h \
+  cppgenerator.h \
+  nederror.h \
+  nedelement.h \
+  cppexprgenerator.h \
+  nedcompiler.h
+cppmsggenerator.obj: cppmsggenerator.cc \
+  nedelements.h \
+  cppgenerator.h \
+  nederror.h \
+  nedelement.h \
+  cppexprgenerator.h \
+  nedcompiler.h
+lex.yy.obj: lex.yy.cc \
+  ./unistd.h \
+  nedgrammar.h \
+  ned.tab.h
+ned.tab.obj: ned.tab.cc \
+  nedgrammar.h \
+  nederror.h \
+  nedparser.h \
+  nedfilebuffer.h \
+  nedelements.h \
+  nedutil.h \
+  nedelement.h
+nedbasicvalidator.obj: nedbasicvalidator.cc \
+  nederror.h \
+  nedbasicvalidator.h \
+  nedelement.h \
+  nedvalidator.h \
+  nedelements.h
+nedcompiler.obj: nedcompiler.cc \
+  nederror.h \
+  nedcompiler.h \
+  nedparser.h \
+  neddtdvalidator.h \
+  nedbasicvalidator.h \
+  nedsemanticvalidator.h \
+  nedelement.h \
+  nedelements.h \
+  nedgrammar.h \
+  nedvalidator.h
+neddtdvalidator.obj: neddtdvalidator.cc \
+  nederror.h \
+  neddtdvalidator.h \
+  nedelement.h \
+  nedelements.h \
+  nedvalidator.h
+neddtdvalidator1.obj: neddtdvalidator1.cc \
+  nederror.h \
+  neddtdvalidator.h \
+  nedelement.h \
+  nedelements.h \
+  nedvalidator.h
+nedelement.obj: nedelement.cc \
+  nedelement.h \
+  nederror.h
+nedelements.obj: nedelements.cc \
+  nederror.h \
+  nedelements.h \
+  nedelement.h
+nederror.obj: nederror.cc \
+  nederror.h \
+  nedelement.h
+nedfilebuffer.obj: nedfilebuffer.cc \
+  nedfilebuffer.h \
+  nedparser.h \
+  nedgrammar.h \
+  nedelement.h
+nedgenerator.obj: nedgenerator.cc \
+  nedgenerator.h \
+  nederror.h \
+  nedelements.h \
+  nedelement.h
+nedparser.obj: nedparser.cc \
+  nedparser.h \
+  nedfilebuffer.h \
+  nedelements.h \
+  nederror.h \
+  nedgrammar.h \
+  nedelement.h
+nedsaxhandler.obj: nedsaxhandler.cc \
+  nedsaxhandler.h \
+  nedelements.h \
+  nederror.h \
+  nedelement.h \
+  saxparser.h
+nedsemanticvalidator.obj: nedsemanticvalidator.cc \
+  nederror.h \
+  nedsemanticvalidator.h \
+  nedcompiler.h \
+  nedelement.h \
+  nedvalidator.h \
+  nedelements.h
+nedutil.obj: nedutil.cc \
+  nederror.h \
+  nedutil.h \
+  nedelement.h
+nedvalidator.obj: nedvalidator.cc \
+  nederror.h \
+  nedvalidator.h \
+  nedelement.h \
+  nedelements.h
+nedxmlparser.obj: nedxmlparser.cc \
+  saxparser.h \
+  nedsaxhandler.h \
+  nederror.h \
+  nedelement.h
+saxparser_expat.obj: saxparser_expat.cc \
+  saxparser.h
+saxparser_libxml.obj: saxparser_libxml.cc \
+  saxparser.h
+saxparser_none.obj: saxparser_none.cc \
+  nederror.h \
+  saxparser.h \
+  nedelement.h
+xmlgenerator.obj: xmlgenerator.cc \
+  nedelements.h \
+  xmlgenerator.h \
+  nedelement.h

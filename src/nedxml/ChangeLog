@@ -1,0 +1,188 @@
+2006-10-21  ------ omnetpp-3.3 released ------
+
+2006-10-04  Andras Varga
+
+	* ned.y: msg file syntax handling made more liberal: accept expressions
+	as field initializers
+
+2006-01-12  ------ omnetpp-3.2p1 released ------
+
+2005-10-19  ------ omnetpp-3.2 released ------
+
+2005-09-22  Andras Varga
+
+	* nedbasicvalidator.cc: enabled parent module gates to get connected
+	with "++". Parentmodgate++ connects the first unconnected gate, but 
+	it doesn't create new ones -- it is an error to exceed sizeof(gate).
+
+2005-08-08  Andras Varga
+
+	* cppgenerator.cc: assign submodule parameters, gatesizes etc 
+	in that submodule's context (use cContextSwitcher); same for network.
+	This is mainly needed for ModNameParamResolver to work correctly
+	($MODULE_NAME etc for XPath expressions are taken from the module 
+	in context).
+
+2005-08-07  Andras Varga
+
+	* cppgenerator.cc: don't look for module type if module vector size 
+	is zero.
+
+2005-07-06 Andras Varga
+
+	* ned.dtd, ned.y, etc: added support for message declarations in msg 
+	files (message-decl element, MessageDeclNode class)
+	
+2005-03-31  ------ omnetpp-3.1 released ------
+
+2004-12-29  ------ omnetpp-3.0 released ------
+
+2004-12-06  Andras Varga
+
+	* ned.y: negative int or real constants were parsed as -1*x, which 
+	caused problems for input() with negative default values
+
+	* cppexprgenerator.cc/h: generate inline expression (not expression 
+	class) for const parameters
+
+	* cppexprgenerator.cc/h: fixed handling of index, sizeof(), input()
+
+2004-11-29  Andras Varga
+
+	* ned.y: malloc.h changed to stdlib.h. Change needed for Mac OS/X 
+	[patch from Michael Tuexen]
+
+2004-11-23  ------ omnetpp-3.0b1 released ------
+
+2004-11-03  ------ omnetpp-3.0a9 released ------
+
+2004-11-02  Andras Varga
+	
+	* Makefile.in/vc, nedgrammar.h: prefix ned parser symbols with "nedyy"
+	(-p nedyy and -Pnedyy options to bison and flex) to avoid conflicts 
+	with parsers in other libraries. [Akaroa was reported by Ana Cristina 
+	Aguiar, TU Berlin]
+
+2004-10-25  Andras Varga
+	
+	* cppgenerator.cc: updated for fullPath() signature change (see 
+	include/ChangeLog)
+
+2004-10-04  ------ omnetpp-3.0a8 released ------
+
+2004-09-24  ------ omnetpp-3.0a7 released ------
+
+2004-09-13  Andras Varga
+
+        * saxparser_libxml.cc: if document has DOCTYPE, validate document 
+        and complete attrs from DTD.
+
+        * saxparser_expat.cc: error message if document has DOCTYPE declared,
+        because we cannot validate it with Expat, nor complete default attrs
+        from DTD
+
+2004-07-27  Andras Varga
+
+        * ned.lex: fixed "`yytext_ptr' undeclared" error with some flex 
+        versions
+
+2004-07-22  ------ omnetpp-3.0a6 released ------
+
+2004-07-20  Andras Varga
+
+        * ned.dtd, ned.y: added source-code attribute to ned-file element,
+        and code to fill it when parsing NED source
+
+2004-06-24  Andras Varga
+
+        * several files: added support for "xml" NED parameter type
+
+2004-06-07  ------ omnetpp-3.0a5 released ------
+
+2004-06-07  Andras Varga
+
+        * cppgenerator.cc: wrong C++ code was generated for "const" parameters
+        [reported by Julien Cartigny]
+
+2004-05-15  ------ omnetpp-3.0a4 released ------
+
+2004-05-13  Andras Varga
+
+        * ned.lex: recognize hex numbers as INTCONSTANT
+
+2004-03-22  ------ omnetpp-3.0a3 released ------
+
+2004-03-06  Andras Varga
+
+        * added support for enum declarations <enum-decl>
+
+2004-03-03  ------ omnetpp-3.0a2 released ------
+
+2004-02-20  Andras Varga
+
+        * cppgenerator.cc: implemented cChannel && cChannelType; several
+        refinements in generated code
+
+        * ned.dtd, ebnf.y: added support for "mod.out++ --> in++" connection
+        syntax, where "++" causes the first, yet unconnected gate to be used,
+        and (with submodule gate vectors) it also expands the vector if 
+        necessary, so "gatesizes:" is not needed. Gate vectors of the parent
+        module cannot be expanded further (because network is built and
+        connected top-down.)
+
+        * cppgenerator.cc, cppexprgenerator.cc: several bugfixes in the 
+        generated code
+
+2004-02-11  Andras Varga
+
+        * ned.y: didn't accept negative numbers and symbolic constants in
+        msg files as field and enum values
+
+2004-02-04  ------ omnetpp-3.0pre1 released ------
+
+2003-10-19  Andras Varga
+
+        * nedelement.cc/h: added userdata field which makes it possible
+        to attach additional data to NEDElement objects (needed for GNED)
+
+2003-08-30  Andras Varga
+
+        * ned.dtd: storing of "like" parameters changed (attribute @like-param
+        introduced)
+
+        * ned.dtd: const/@value made optional (because we cannot distinguish 
+        empty attribute ("") and missing attribute, and "" string constant 
+        caused validation error).
+
+2003-07-31  Andras Varga
+
+        * updated for current syntax of message declarations (dtd change)
+
+2003-07-27  Andras Varga
+
+        * ned.dtd: added source-code attribute to top-level elements; this 
+        is useful for documentation generation.
+
+2003-06-16  ------ omnetpp-2.3 released ------
+
+2003-03-15  ------ omnetpp-2.3b2 released ------
+
+2003-02-15  ------ omnetpp-2.3b1 released ------
+
+2002-11-30  Andras Varga
+
+        * development of NEDXML is under way. Until the code reaches a stable
+        state, I use a local CVS repository on my home PC for convenience, 
+        and periodically update the main OMNeT++ CVS from the local CVS.
+
+2002-06-09  Ulrich Kaage <kaage@int.uni-karlsruhe.de>
+
+        * ned.y (swapAttributes): compile fix for gcc 3.x: Ambiguous
+        implicit conversion for NEDString::NEDString(NEDString)
+        
+2002-06-08  Ulrich Kaage  <kaage@int.uni-karlsruhe.de>
+
+        * Makefile.in: created from Makefile.vc
+
+2002-06-07  Andras Varga
+        * initial revision

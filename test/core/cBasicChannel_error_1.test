@@ -1,0 +1,113 @@
+%description:
+Test channel bit error rate in NED by using messages of different lengths
+
+%file: {}.ned
+
+channel {MyConn}
+    delay 0.004;
+    error 0.1;
+endchannel
+
+simple {Node1}
+    gates:
+        out: out;
+endsimple
+
+simple {Node2}
+    gates:
+        in: in;
+endsimple
+
+module {MyNet}
+    submodules:
+        node1: {Node1};
+        node2: {Node2};
+    connections:
+        node1.out --> {MyConn} --> node2.in;
+endmodule
+
+network
+     {myNet}: {MyNet};
+endnetwork
+
+%file: {}.cc
+
+#include <omnetpp.h>
+
+#define NUM_MSGS         2000
+#define BIT_ERROR_RATE   0.1
+
+class {Node1} : public cSimpleModule
+{
+    Module_Class_Members({Node1},cSimpleModule,16384)
+    virtual void activity();
+};
+
+Define_Module({Node1});
+
+void {Node1}::activity()
+{
+    // send packets with lengths 0,1,2,3,4
+    for (int len=0; len<5; len++)
+    {
+        for (int i=0; i<NUM_MSGS; i++)
+        {
+            cMessage *msg = new cMessage();
+            msg->setLength(len);
+            send(msg, "out");
+            wait(exponential(1.0));
+        }
+    }
+}
+
+#include <omnetpp.h>
+
+class {Node2} : public cSimpleModule
+{
+    int errors[5];
+
+    Module_Class_Members({Node2},cSimpleModule,16384)
+    virtual void activity();
+    virtual void finish();
+};
+
+Define_Module({Node2});
+
+void {Node2}::activity()
+{
+    for (int i=0; i<5; i++)
+        errors[i] = 0;
+
+    for(;;)
+    {
+        cMessage *msg = receive();
+        if (msg->hasBitError())
+            errors[msg->length()]++;
+        delete msg;
+    }
+}
+
+void {Node2}::finish()
+{
+    for (int len=0; len<5; len++)
+    {
+        double exp_erate = 1-pow(1-BIT_ERROR_RATE, len);
+        double erate = (double)errors[len] / (double)NUM_MSGS;
+        ev << "msg len: " << len << endl;
+        ev << "error rate: measured: " << erate << ", expected: " << exp_erate << endl;
+
+        if (fabs(erate-exp_erate) > exp_erate/10)
+            ev << "wrong error rate!" << endl;
+    }
+}
+
+%inifile: {}.ini
+[General]
+network={myNet}
+
+[Cmdenv]
+express-mode=yes
+
+%not-contains: stdout
+wrong error rate
+

@@ -1,0 +1,1597 @@
+#
+# Definitions to be customized by 'configure'
+#
+CXX=@CXX@
+AS=@AS@
+AR=@AR@
+MSGC=@MSGC@
+RANLIB=@RANLIB@
+SHLIB_LD=@SHLIB_LD@
+MAKEDEPEND=@MAKEDEPEND@
+
+CFLAGS=@CFLAGS@
+
+OMNETPP_INCL_DIR=@OMNETPP_INCL_DIR@
+OMNETPP_LIB_DIR=@OMNETPP_LIB_DIR@
+
+OMNETPP_VERSION=@OMNETPP_VERSION@
+OMNETPP_EDITION=@OMNETPP_EDITION@
+
+HAVE_MPI=@HAVE_MPI@
+MPI_CFLAGS=@MPI_CFLAGS@
+
+WITH_NETBUILDER=@WITH_NETBUILDER@
+WITH_PARSIM=@WITH_PARSIM@
+
+# LIB_SUFFIX is either A_LIB_SUFFIX or SO_LIB_SUFFIX
+LIB_SUFFIX=@LIB_SUFFIX@
+
+A_LIB_SUFFIX=@A_LIB_SUFFIX@
+SO_LIB_SUFFIX=@SO_LIB_SUFFIX@
+
+#
+# Local definitions
+#
+COPTS=$(CFLAGS) -I$(OMNETPP_INCL_DIR) -I. -DBUILDING_SIM $(MPI_CFLAGS) $(PVM_CFLAGS)
+
+CPPOBJS_STD = task.o ccoroutine.o ctypes.o carray.o cgate.o cpolymorphic.o \
+         cmodule.o csimplemodule.o csimul.o cobject.o cvisitor.o cpar.o \
+         cstat.o chist.o cdensity.o cvarhist.o cpsquare.o cksplit.o \
+         cmessage.o cdetect.o util.o cllist.o ctopo.o errmsg.o \
+         cmsgheap.o coutvect.o cqueue.o globals.o cwatch.o cstlwatch.o \
+         cpacket.o cfsm.o cclassdescriptor.o cchannel.o cenum.o cexception.o cdispstr.o \
+         cdefaultlist.o cscheduler.o onstartup.o distrib.o sim_std_m.o \
+         cxmlelement.o minixpath.o cmersennetwister.o clcg32.o cstrtokenizer.o
+CPPOBJS_NETBUILDER= netbuilder/cdynamicmodule.o netbuilder/cdynamicnetwork.o \
+                    netbuilder/cdynamicchannel.o \
+                    netbuilder/cnednetworkbuilder.o netbuilder/loadnedfile.o
+CPPOBJS_PARSIM = parsim/ccommbuffer.o parsim/cmemcommbuffer.o \
+         parsim/cparsimpartition.o parsim/cplaceholdermod.o parsim/cproxygate.o \
+         parsim/cparsimprotocolbase.o parsim/cnosynchronization.o \
+         parsim/cnullmessageprot.o parsim/clinkdelaylookahead.o \
+         parsim/cidealsimulationprot.o parsim/cispeventlogger.o \
+         parsim/cparsimcomm.o \
+         parsim/ccommbufferbase.o parsim/cfilecomm.o parsim/cfilecommbuffer.o \
+         parsim/cnamedpipecomm.o parsim/cnamedpipecomm-win.o parsim/parsimutil.o \
+         parsim/creceivedexception.o
+CPPOBJS_MPI = parsim/cmpicomm.o parsim/cmpicommbuffer.o
+
+CPPOBJS= $(CPPOBJS_STD)
+
+ifeq ($(WITH_NETBUILDER),yes)
+CPPOBJS += $(CPPOBJS_NETBUILDER)
+COPTS += -I../nedxml
+endif
+
+ifeq ($(WITH_PARSIM),yes)
+CPPOBJS += $(CPPOBJS_PARSIM)
+ifeq ($(HAVE_MPI),yes)
+CPPOBJS += $(CPPOBJS_MPI)
+COPTS += $(MPI_CFLAGS)
+endif
+endif
+
+#
+# Automatic rules
+#
+.SUFFIXES : .cc
+
+.cc.o:
+	$(CXX) -c $(COPTS) -o $@ $<
+
+#
+# Targets
+#
+default : sim_std
+
+sim_std : libsim_std$(LIB_SUFFIX)
+
+libsim_std$(A_LIB_SUFFIX) : $(CPPOBJS)
+	$(AR) libsim_std$(A_LIB_SUFFIX) $(CPPOBJS)
+	$(RANLIB) libsim_std$(A_LIB_SUFFIX)
+	../utils/install-lib libsim_std$(A_LIB_SUFFIX).$(OMNETPP_VERSION) $(OMNETPP_LIB_DIR) libsim_std$(A_LIB_SUFFIX)
+
+libsim_std$(SO_LIB_SUFFIX) : $(CPPOBJS)
+	$(SHLIB_LD) -o libsim_std$(SO_LIB_SUFFIX) $(CPPOBJS)
+	../utils/install-lib libsim_std$(SO_LIB_SUFFIX).$(OMNETPP_VERSION) $(OMNETPP_LIB_DIR) libsim_std$(SO_LIB_SUFFIX)
+
+sim_std_m.cc sim_std_m.h : sim_std.msg
+	$(MSGC) -Xnc -Xns sim_std.msg
+
+depend:
+	$(MAKEDEPEND) -I../../include -- *.cc parsim/*.cc
+	$(MAKEDEPEND) -I../../include -fMakefile.in -- *.cc parsim/*.cc
+
+clean:
+	rm -f *.o parsim/*.o netbuilder/*.o *_m.*
+	rm -f libsim_std$(A_LIB_SUFFIX) libsim_std$(SO_LIB_SUFFIX)
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+carray.o: carray.cc \
+  ../../include/macros.h \
+  ../../include/errmsg.h \
+  ../../include/carray.h \
+  ../../include/cexception.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/globals.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h
+cchannel.o: cchannel.cc \
+  ../../include/cmessage.h \
+  ../../include/cmodule.h \
+  ../../include/carray.h \
+  ../../include/cpar.h \
+  ../../include/cenvir.h \
+  ../../include/random.h \
+  ../../include/distrib.h \
+  ../../include/csimul.h \
+  ../../include/macros.h \
+  ../../include/cgate.h \
+  ../../include/cchannel.h \
+  ../../include/cexception.h \
+  ../../include/ccommbuffer.h \
+  ../../include/cobject.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/cqueue.h \
+  ../../include/cdefaultlist.h \
+  ../../include/onstartup.h \
+  ../../include/crng.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../../include/ctypes.h \
+  ../../include/opp_string.h
+cclassdescriptor.o: cclassdescriptor.cc \
+  ../../include/cclassdescriptor.h \
+  ../../include/carray.h \
+  ../../include/cenum.h \
+  ../../include/globals.h \
+  ../../include/util.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/defs.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/onstartup.h
+ccoroutine.o: ccoroutine.cc \
+  ../../include/ccoroutine.h \
+  task.h \
+  ../../include/defs.h
+cdefaultlist.o: cdefaultlist.cc \
+  ../../include/macros.h \
+  ../../include/errmsg.h \
+  ../../include/carray.h \
+  ../../include/cexception.h \
+  ../../include/cdefaultlist.h \
+  ../../include/cwatch.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/globals.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h
+cdensity.o: cdensity.cc \
+  ../../include/macros.h \
+  ../../include/cdensity.h \
+  ../../include/cexception.h \
+  ../../include/errmsg.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h \
+  ../../include/cstat.h \
+  ../../include/opp_string.h
+cdetect.o: cdetect.cc \
+  ../../include/csimul.h \
+  ../../include/cdetect.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/cobject.h \
+  ../../include/onstartup.h \
+  ../../include/cenvir.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/cstat.h
+cdispstr.o: cdispstr.cc \
+  ../../include/cenvir.h \
+  ../../include/cmodule.h \
+  ../../include/cgate.h \
+  ../../include/cdispstr.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/csimul.h \
+  ../../include/cdefaultlist.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h
+cenum.o: cenum.cc \
+  ../../include/macros.h \
+  ../../include/ctypes.h \
+  ../../include/csimul.h \
+  ../../include/cenum.h \
+  ../../include/cexception.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/opp_string.h
+cexception.o: cexception.cc \
+  ../../include/cexception.h \
+  ../../include/csimul.h \
+  ../../include/cmodule.h \
+  ../../include/errmsg.h \
+  ../../include/cenvir.h \
+  ../../include/cconfig.h \
+  ../../include/defs.h \
+  ../../include/opp_string.h \
+  ../../include/util.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/cobject.h \
+  ../../include/onstartup.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h
+cfsm.o: cfsm.cc \
+  ../../include/macros.h \
+  ../../include/cfsm.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/globals.h
+cgate.o: cgate.cc \
+  ../../include/cmessage.h \
+  ../../include/cmodule.h \
+  ../../include/carray.h \
+  ../../include/cpar.h \
+  ../../include/cenvir.h \
+  ../../include/csimul.h \
+  ../../include/macros.h \
+  ../../include/cgate.h \
+  ../../include/cchannel.h \
+  ../../include/cdispstr.h \
+  ../../include/util.h \
+  ../../include/cobject.h \
+  ../../include/defs.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/cqueue.h \
+  ../../include/cdefaultlist.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../../include/ctypes.h
+chist.o: chist.cc \
+  ../../include/random.h \
+  ../../include/distrib.h \
+  ../../include/macros.h \
+  ../../include/cdetect.h \
+  ../../include/chist.h \
+  ../../include/cexception.h \
+  ../../include/errmsg.h \
+  ../../include/ccommbuffer.h \
+  ../../include/defs.h \
+  ../../include/csimul.h \
+  ../../include/cmodule.h \
+  ../../include/crng.h \
+  ../../include/util.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/cobject.h \
+  ../../include/onstartup.h \
+  ../../include/cenvir.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/ctypes.h \
+  ../../include/cstat.h \
+  ../../include/cdensity.h \
+  ../../include/opp_string.h
+cksplit.o: cksplit.cc \
+  ../../include/macros.h \
+  ../../include/cenvir.h \
+  ../../include/cksplit.h \
+  ../../include/random.h \
+  ../../include/distrib.h \
+  ../../include/cexception.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h \
+  ../../include/cdensity.h \
+  ../../include/cstat.h \
+  ../../include/csimul.h \
+  ../../include/cmodule.h \
+  ../../include/crng.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/opp_string.h
+clcg32.o: clcg32.cc \
+  clcg32.h \
+  ../../include/util.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/defs.h \
+  ../../include/macros.h \
+  ../../include/crng.h \
+  ../../include/cconfig.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/cobject.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h \
+  ../../include/opp_string.h
+cllist.o: cllist.cc \
+  ../../include/macros.h \
+  ../../include/cllist.h \
+  ../../include/cexception.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h \
+  ../../include/opp_string.h
+cmersennetwister.o: cmersennetwister.cc \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cexception.h \
+  cmersennetwister.h \
+  ../../include/cparsimcomm.h \
+  ../../include/defs.h \
+  ../../include/opp_string.h \
+  ../../include/macros.h \
+  ../../include/crng.h \
+  ../../include/cconfig.h \
+  mersennetwister.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/cobject.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h
+cmessage.o: cmessage.cc \
+  ../../include/macros.h \
+  ../../include/cmodule.h \
+  ../../include/csimplemodule.h \
+  ../../include/cmessage.h \
+  ../../include/cexception.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h \
+  ../../include/ccoroutine.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/csimul.h \
+  ../../include/cdefaultlist.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../../include/cpar.h \
+  ../../include/opp_string.h
+cmodule.o: cmodule.cc \
+  ../../include/cmodule.h \
+  ../../include/csimplemodule.h \
+  ../../include/cgate.h \
+  ../../include/cchannel.h \
+  ../../include/cmessage.h \
+  ../../include/csimul.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/cpar.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/cdispstr.h \
+  ../../include/util.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/cqueue.h \
+  ../../include/cdefaultlist.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../../include/opp_string.h
+cmsgheap.o: cmsgheap.cc \
+  ../../include/macros.h \
+  ../../include/cmessage.h \
+  ../../include/cmsgheap.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/globals.h \
+  ../../include/cpar.h \
+  ../../include/csimul.h \
+  ../../include/errmsg.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h
+cobject.o: cobject.cc \
+  ../../include/csimul.h \
+  ../../include/cenvir.h \
+  ../../include/macros.h \
+  ../../include/cobject.h \
+  ../../include/cexception.h \
+  ../../include/util.h \
+  ../../include/cdefaultlist.h \
+  ../../include/cclassdescriptor.h \
+  ../../include/ccommbuffer.h \
+  ../../include/defs.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h
+coutvect.o: coutvect.cc \
+  ../../include/macros.h \
+  ../../include/coutvect.h \
+  ../../include/cmodule.h \
+  ../../include/csimul.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h \
+  ../../include/ccoroutine.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/opp_string.h
+cpacket.o: cpacket.cc \
+  ../../include/macros.h \
+  ../../include/cpacket.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/globals.h \
+  ../../include/cmessage.h \
+  ../../include/cpar.h \
+  ../../include/csimul.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h
+cpar.o: cpar.cc \
+  ../../include/cpar.h \
+  ../../include/cstat.h \
+  ../../include/macros.h \
+  ../../include/errmsg.h \
+  ../../include/cmodule.h \
+  ../../include/csimul.h \
+  ../../include/cxmlelement.h \
+  ../../include/cconfig.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/ccommbuffer.h \
+  ../../include/cobject.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/globals.h \
+  ../../include/ccoroutine.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../../include/opp_string.h
+cpolymorphic.o: cpolymorphic.cc \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cclassdescriptor.h \
+  ../../include/errmsg.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/opp_string.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/cvisitor.h
+cpsquare.o: cpsquare.cc \
+  ../../include/macros.h \
+  ../../include/cpsquare.h \
+  ../../include/cexception.h \
+  ../../include/random.h \
+  ../../include/distrib.h \
+  ../../include/errmsg.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h \
+  ../../include/cdensity.h \
+  ../../include/cstat.h \
+  ../../include/opp_string.h \
+  ../../include/csimul.h \
+  ../../include/cmodule.h \
+  ../../include/crng.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h
+cqueue.o: cqueue.cc \
+  ../../include/macros.h \
+  ../../include/cqueue.h \
+  ../../include/cexception.h \
+  ../../include/errmsg.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h \
+  ../../include/opp_string.h
+cscheduler.o: cscheduler.cc \
+  ../../include/cscheduler.h \
+  ../../include/cmessage.h \
+  ../../include/csimul.h \
+  ../../include/cmsgheap.h \
+  ../../include/macros.h \
+  ../../include/cenvir.h \
+  ../../include/cconfig.h \
+  ../../include/platdep/misc.h \
+  ../../include/cpolymorphic.h \
+  ../../include/platdep/time.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cobject.h \
+  ../../include/carray.h \
+  ../../include/cpar.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/onstartup.h \
+  ../../include/ctypes.h
+csimplemodule.o: csimplemodule.cc \
+  ../../include/csimplemodule.h \
+  ../../include/cgate.h \
+  ../../include/cmessage.h \
+  ../../include/csimul.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/cpar.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/cmodule.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/cqueue.h \
+  ../../include/cdefaultlist.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../../include/opp_string.h
+csimul.o: csimul.cc \
+  ../../include/cmodule.h \
+  ../../include/csimplemodule.h \
+  ../../include/cmessage.h \
+  ../../include/csimul.h \
+  ../../include/cscheduler.h \
+  ../../include/cenvir.h \
+  ../../include/ctypes.h \
+  ../../include/cpar.h \
+  ../../include/cstat.h \
+  ../../include/cexception.h \
+  ../../include/ccommbuffer.h \
+  netbuilder/loadnedfile.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../../include/platdep/time.h \
+  ../../include/opp_string.h
+cstat.o: cstat.cc \
+  ../../include/cstat.h \
+  ../../include/random.h \
+  ../../include/distrib.h \
+  ../../include/macros.h \
+  ../../include/cdetect.h \
+  ../../include/csimplemodule.h \
+  ../../include/cexception.h \
+  ../../include/cenvir.h \
+  ../../include/errmsg.h \
+  ../../include/ccommbuffer.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/csimul.h \
+  ../../include/cmodule.h \
+  ../../include/crng.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/ctypes.h \
+  ../../include/opp_string.h
+cstlwatch.o: cstlwatch.cc \
+  ../../include/cstlwatch.h \
+  ../../include/cclassdescriptor.h \
+  ../../include/macros.h \
+  ../../include/cobject.h \
+  ../../include/cwatch.h \
+  ../../include/cenvir.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/globals.h
+cstrtokenizer.o: cstrtokenizer.cc \
+  ../../include/cstrtokenizer.h \
+  ../../include/defs.h
+ctopo.o: ctopo.cc \
+  ../../include/macros.h \
+  ../../include/cmodule.h \
+  ../../include/cgate.h \
+  ../../include/cpar.h \
+  ../../include/cllist.h \
+  ../../include/ctopo.h \
+  ../../include/cexception.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h \
+  ../../include/ccoroutine.h \
+  ../../include/cqueue.h \
+  ../../include/csimul.h \
+  ../../include/cdefaultlist.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../../include/opp_string.h
+ctypes.o: ctypes.cc \
+  ../../include/cpar.h \
+  ../../include/cmodule.h \
+  ../../include/cchannel.h \
+  ../../include/macros.h \
+  ../../include/ctypes.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/ccommbuffer.h \
+  parsim/cplaceholdermod.h \
+  ../../include/cobject.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/csimul.h \
+  ../../include/cdefaultlist.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../../include/opp_string.h
+cvarhist.o: cvarhist.cc \
+  ../../include/macros.h \
+  ../../include/random.h \
+  ../../include/distrib.h \
+  ../../include/cvarhist.h \
+  ../../include/cexception.h \
+  ../../include/errmsg.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h \
+  ../../include/csimul.h \
+  ../../include/cmodule.h \
+  ../../include/crng.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/chist.h \
+  ../../include/cdensity.h \
+  ../../include/cstat.h \
+  ../../include/opp_string.h
+cvisitor.o: cvisitor.cc \
+  ../../include/cvisitor.h \
+  ../../include/cobject.h \
+  ../../include/defs.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/opp_string.h
+cwatch.o: cwatch.cc \
+  ../../include/cwatch.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h
+cxmlelement.o: cxmlelement.cc \
+  ../../include/cxmlelement.h \
+  minixpath.h \
+  ../../include/cexception.h \
+  ../../include/cenvir.h \
+  ../../include/cmodule.h \
+  ../../include/defs.h \
+  ../../include/opp_string.h \
+  ../../include/util.h \
+  ../../include/cobject.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/csimul.h \
+  ../../include/cdefaultlist.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h
+distrib.o: distrib.cc \
+  ../../include/distrib.h \
+  ../../include/macros.h \
+  ../../include/cexception.h \
+  ../../include/defs.h \
+  ../../include/random.h \
+  ../../include/csimul.h \
+  ../../include/cmodule.h \
+  ../../include/crng.h \
+  ../../include/util.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/cobject.h \
+  ../../include/onstartup.h \
+  ../../include/cenvir.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/ctypes.h \
+  ../../include/opp_string.h
+errmsg.o: errmsg.cc
+globals.o: globals.cc \
+  ../../include/macros.h \
+  ../../include/globals.h \
+  ../../include/carray.h \
+  ../../include/onstartup.h \
+  ../../include/ctypes.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h
+minixpath.o: minixpath.cc \
+  minixpath.h \
+  ../../include/cexception.h \
+  ../../include/cxmlelement.h \
+  ../../include/defs.h \
+  ../../include/cenvir.h \
+  ../../include/opp_string.h \
+  ../../include/util.h
+onstartup.o: onstartup.cc \
+  ../../include/onstartup.h \
+  ../../include/cexception.h \
+  ../../include/defs.h \
+  ../../include/opp_string.h \
+  ../../include/util.h
+task.o: task.cc \
+  task.h
+util.o: util.cc \
+  ../../include/util.h \
+  ../../include/distrib.h \
+  ../../include/cscheduler.h \
+  ../../include/cenvir.h \
+  ../../include/cmodule.h \
+  ../../include/macros.h \
+  ../../include/cexception.h \
+  ../../include/cwatch.h \
+  ../../include/cstlwatch.h \
+  ../../include/cpacket.h \
+  clcg32.h \
+  cmersennetwister.h \
+  ../../include/cksplit.h \
+  ../../include/cpsquare.h \
+  ../../include/cstrtokenizer.h \
+  ../../include/defs.h \
+  ../../include/random.h \
+  ../../include/csimul.h \
+  ../../include/crng.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/cobject.h \
+  ../../include/onstartup.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/platdep/time.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/ctypes.h \
+  ../../include/opp_string.h \
+  ../../include/cmessage.h \
+  ../../include/cpar.h \
+  ../../include/cconfig.h \
+  mersennetwister.h \
+  ../../include/cdensity.h \
+  ../../include/cstat.h
+parsim/cadvlinkdelaylookahead.o: parsim/cadvlinkdelaylookahead.cc \
+  parsim/cadvlinkdelaylookahead.h \
+  ../../include/csimul.h \
+  ../../include/cmessage.h \
+  ../../include/cenvir.h \
+  parsim/cnullmessageprot.h \
+  ../../include/cparsimcomm.h \
+  parsim/cparsimpartition.h \
+  parsim/cplaceholdermod.h \
+  parsim/cproxygate.h \
+  ../../include/cchannel.h \
+  ../../include/macros.h \
+  parsim/cnmplookahead.h \
+  ../../include/cpolymorphic.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/cobject.h \
+  ../../include/onstartup.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/carray.h \
+  ../../include/cpar.h \
+  parsim/cparsimprotocolbase.h \
+  parsim/cparsimsynchr.h \
+  ../../include/cscheduler.h \
+  ../../include/platdep/time.h \
+  ../../include/cmodule.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/ctypes.h
+parsim/ccommbufferbase.o: parsim/ccommbufferbase.cc \
+  parsim/ccommbufferbase.h \
+  ../../include/cexception.h \
+  ../../include/ccommbuffer.h \
+  ../../include/cpolymorphic.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/opp_string.h
+parsim/ccommbuffer.o: parsim/ccommbuffer.cc \
+  ../../include/ccommbuffer.h \
+  ../../include/util.h \
+  ../../include/cobject.h \
+  ../../include/ctypes.h \
+  ../../include/cpolymorphic.h \
+  ../../include/defs.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/globals.h \
+  ../../include/onstartup.h
+parsim/cfilecommbuffer.o: parsim/cfilecommbuffer.cc \
+  parsim/cfilecommbuffer.h \
+  ../../include/util.h \
+  ../../include/cobject.h \
+  ../../include/macros.h \
+  parsim/ccommbufferbase.h \
+  ../../include/ccommbuffer.h \
+  ../../include/cpolymorphic.h \
+  ../../include/defs.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/globals.h
+parsim/cfilecomm.o: parsim/cfilecomm.cc \
+  ../../include/cexception.h \
+  parsim/cfilecomm.h \
+  parsim/cfilecommbuffer.h \
+  ../../include/macros.h \
+  ../../include/cenvir.h \
+  ../../include/cconfig.h \
+  parsim/parsimutil.h \
+  ../../include/platdep/misc.h \
+  ../../include/defs.h \
+  ../../include/opp_string.h \
+  ../../include/util.h \
+  ../../include/cparsimcomm.h \
+  ../../include/cpolymorphic.h \
+  parsim/ccommbufferbase.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/cobject.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h
+parsim/cidealsimulationprot.o: parsim/cidealsimulationprot.cc \
+  ../../include/cmessage.h \
+  ../../include/cmodule.h \
+  ../../include/cgate.h \
+  ../../include/cenvir.h \
+  ../../include/cconfig.h \
+  parsim/cidealsimulationprot.h \
+  parsim/cplaceholdermod.h \
+  parsim/cparsimpartition.h \
+  ../../include/cparsimcomm.h \
+  ../../include/ccommbuffer.h \
+  parsim/messagetags.h \
+  ../../include/macros.h \
+  ../../include/cobject.h \
+  ../../include/carray.h \
+  ../../include/cpar.h \
+  ../../include/csimul.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/onstartup.h \
+  ../../include/cqueue.h \
+  ../../include/cdefaultlist.h \
+  parsim/cparsimprotocolbase.h \
+  parsim/cparsimsynchr.h \
+  ../../include/cscheduler.h \
+  ../../include/platdep/time.h \
+  ../../include/ctypes.h
+parsim/cispeventlogger.o: parsim/cispeventlogger.cc \
+  parsim/cispeventlogger.h \
+  parsim/cidealsimulationprot.h \
+  ../../include/cparsimcomm.h \
+  parsim/cplaceholdermod.h \
+  ../../include/cmodule.h \
+  ../../include/macros.h \
+  parsim/cnullmessageprot.h \
+  parsim/cparsimprotocolbase.h \
+  ../../include/cmessage.h \
+  parsim/cparsimsynchr.h \
+  ../../include/cscheduler.h \
+  ../../include/cpolymorphic.h \
+  ../../include/platdep/time.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cobject.h \
+  ../../include/carray.h \
+  ../../include/cpar.h \
+  ../../include/csimul.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/onstartup.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/ctypes.h
+parsim/clinkdelaylookahead.o: parsim/clinkdelaylookahead.cc \
+  parsim/clinkdelaylookahead.h \
+  ../../include/csimul.h \
+  ../../include/cmessage.h \
+  ../../include/cenvir.h \
+  parsim/cnullmessageprot.h \
+  ../../include/cparsimcomm.h \
+  parsim/cparsimpartition.h \
+  parsim/cplaceholdermod.h \
+  parsim/cproxygate.h \
+  ../../include/cchannel.h \
+  ../../include/macros.h \
+  parsim/cnmplookahead.h \
+  ../../include/cpolymorphic.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/cobject.h \
+  ../../include/onstartup.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/carray.h \
+  ../../include/cpar.h \
+  parsim/cparsimprotocolbase.h \
+  parsim/cparsimsynchr.h \
+  ../../include/cscheduler.h \
+  ../../include/platdep/time.h \
+  ../../include/cmodule.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/ctypes.h
+parsim/cmemcommbuffer.o: parsim/cmemcommbuffer.cc \
+  parsim/cmemcommbuffer.h \
+  ../../include/util.h \
+  ../../include/cobject.h \
+  ../../include/macros.h \
+  parsim/ccommbufferbase.h \
+  ../../include/ccommbuffer.h \
+  ../../include/cpolymorphic.h \
+  ../../include/defs.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/globals.h
+parsim/cmpicommbuffer.o: parsim/cmpicommbuffer.cc \
+  parsim/cmpicommbuffer.h \
+  ../../include/macros.h \
+  parsim/ccommbufferbase.h \
+  ../../include/ccommbuffer.h \
+  ../../include/cpolymorphic.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/globals.h
+parsim/cmpicomm.o: parsim/cmpicomm.cc \
+  parsim/cmpicomm.h \
+  parsim/cmpicommbuffer.h \
+  ../../include/macros.h \
+  ../../include/cenvir.h \
+  ../../include/cconfig.h \
+  ../../include/platdep/misc.h \
+  ../../include/cparsimcomm.h \
+  ../../include/cpolymorphic.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  parsim/ccommbufferbase.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/cobject.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/globals.h
+parsim/cnamedpipecomm.o: parsim/cnamedpipecomm.cc \
+  parsim/cnamedpipecomm.h \
+  ../../include/cexception.h \
+  parsim/cmemcommbuffer.h \
+  ../../include/macros.h \
+  ../../include/cenvir.h \
+  ../../include/cconfig.h \
+  parsim/parsimutil.h \
+  ../../include/util.h \
+  ../../include/opp_string.h \
+  ../../include/cparsimcomm.h \
+  ../../include/defs.h \
+  ../../include/cpolymorphic.h \
+  parsim/ccommbufferbase.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/cobject.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h
+parsim/cnamedpipecomm-win.o: parsim/cnamedpipecomm-win.cc \
+  parsim/cnamedpipecomm.h \
+  ../../include/cexception.h \
+  parsim/cmemcommbuffer.h \
+  ../../include/macros.h \
+  ../../include/cenvir.h \
+  ../../include/cconfig.h \
+  parsim/parsimutil.h \
+  ../../include/util.h \
+  ../../include/opp_string.h \
+  ../../include/cparsimcomm.h \
+  ../../include/defs.h \
+  ../../include/cpolymorphic.h \
+  parsim/ccommbufferbase.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/cobject.h \
+  ../../include/cvisitor.h \
+  ../../include/globals.h
+parsim/cnosynchronization.o: parsim/cnosynchronization.cc \
+  ../../include/cmessage.h \
+  ../../include/cmodule.h \
+  ../../include/cgate.h \
+  ../../include/cenvir.h \
+  parsim/cnosynchronization.h \
+  parsim/cparsimpartition.h \
+  ../../include/cparsimcomm.h \
+  ../../include/ccommbuffer.h \
+  parsim/messagetags.h \
+  ../../include/macros.h \
+  ../../include/cobject.h \
+  ../../include/carray.h \
+  ../../include/cpar.h \
+  ../../include/csimul.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/onstartup.h \
+  ../../include/cqueue.h \
+  ../../include/cdefaultlist.h \
+  parsim/cparsimprotocolbase.h \
+  parsim/cparsimsynchr.h \
+  ../../include/cscheduler.h \
+  ../../include/platdep/time.h \
+  ../../include/ctypes.h
+parsim/cnullmessageprot.o: parsim/cnullmessageprot.cc \
+  ../../include/cmessage.h \
+  ../../include/cmodule.h \
+  ../../include/cgate.h \
+  ../../include/cenvir.h \
+  ../../include/cconfig.h \
+  parsim/cnullmessageprot.h \
+  parsim/clinkdelaylookahead.h \
+  parsim/cparsimpartition.h \
+  ../../include/cparsimcomm.h \
+  ../../include/ccommbuffer.h \
+  parsim/messagetags.h \
+  ../../include/macros.h \
+  parsim/cplaceholdermod.h \
+  parsim/cproxygate.h \
+  ../../include/cchannel.h \
+  ../../include/cobject.h \
+  ../../include/carray.h \
+  ../../include/cpar.h \
+  ../../include/csimul.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/onstartup.h \
+  ../../include/cqueue.h \
+  ../../include/cdefaultlist.h \
+  parsim/cparsimprotocolbase.h \
+  parsim/cparsimsynchr.h \
+  ../../include/cscheduler.h \
+  ../../include/platdep/time.h \
+  parsim/cnmplookahead.h \
+  ../../include/ctypes.h
+parsim/cparsimcomm.o: parsim/cparsimcomm.cc \
+  ../../include/errmsg.h \
+  ../../include/ccommbuffer.h \
+  ../../include/cparsimcomm.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/cpolymorphic.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/opp_string.h
+parsim/cparsimpartition.o: parsim/cparsimpartition.cc \
+  ../../include/cmessage.h \
+  ../../include/errmsg.h \
+  parsim/cplaceholdermod.h \
+  parsim/cproxygate.h \
+  parsim/cparsimpartition.h \
+  ../../include/ccommbuffer.h \
+  ../../include/cparsimcomm.h \
+  parsim/cparsimsynchr.h \
+  parsim/creceivedexception.h \
+  parsim/messagetags.h \
+  ../../include/cenvir.h \
+  ../../include/cconfig.h \
+  ../../include/macros.h \
+  ../../include/cobject.h \
+  ../../include/carray.h \
+  ../../include/cpar.h \
+  ../../include/csimul.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/onstartup.h \
+  ../../include/cmodule.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/cscheduler.h \
+  ../../include/platdep/time.h \
+  ../../include/ctypes.h
+parsim/cparsimprotocolbase.o: parsim/cparsimprotocolbase.cc \
+  ../../include/cmessage.h \
+  ../../include/cmodule.h \
+  ../../include/cgate.h \
+  ../../include/cenvir.h \
+  parsim/cparsimpartition.h \
+  ../../include/cparsimcomm.h \
+  ../../include/ccommbuffer.h \
+  parsim/messagetags.h \
+  parsim/cparsimprotocolbase.h \
+  ../../include/cobject.h \
+  ../../include/carray.h \
+  ../../include/cpar.h \
+  ../../include/csimul.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/onstartup.h \
+  ../../include/cqueue.h \
+  ../../include/cdefaultlist.h \
+  parsim/cparsimsynchr.h \
+  ../../include/cscheduler.h \
+  ../../include/platdep/time.h
+parsim/cplaceholdermod.o: parsim/cplaceholdermod.cc \
+  parsim/cplaceholdermod.h \
+  parsim/cproxygate.h \
+  parsim/cfilecomm.h \
+  parsim/cnamedpipecomm.h \
+  parsim/cnosynchronization.h \
+  parsim/cnullmessageprot.h \
+  parsim/cispeventlogger.h \
+  parsim/cidealsimulationprot.h \
+  parsim/clinkdelaylookahead.h \
+  ../../include/cmodule.h \
+  ../../include/csimul.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../../include/cparsimcomm.h \
+  parsim/cparsimprotocolbase.h \
+  parsim/cparsimsynchr.h \
+  ../../include/cscheduler.h \
+  ../../include/platdep/time.h \
+  ../../include/cmessage.h \
+  ../../include/cpar.h \
+  parsim/cnmplookahead.h
+parsim/cproxygate.o: parsim/cproxygate.cc \
+  parsim/cproxygate.h \
+  parsim/cparsimpartition.h \
+  ../../include/cmodule.h \
+  ../../include/cmessage.h \
+  ../../include/cgate.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/csimul.h \
+  ../../include/cdefaultlist.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../../include/cpar.h
+parsim/cptrpassingmpicommbuffer.o: parsim/cptrpassingmpicommbuffer.cc \
+  parsim/cmpicommbuffer.h \
+  ../../include/macros.h \
+  parsim/ccommbufferbase.h \
+  ../../include/ccommbuffer.h \
+  ../../include/cpolymorphic.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/globals.h
+parsim/cptrpassingmpicomm.o: parsim/cptrpassingmpicomm.cc \
+  parsim/cptrpassingmpicomm.h \
+  parsim/cptrpassingmpicommbuffer.h \
+  ../../include/macros.h \
+  ../../include/cparsimcomm.h \
+  ../../include/cpolymorphic.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  parsim/cmpicommbuffer.h \
+  parsim/ccommbufferbase.h \
+  ../../include/ccommbuffer.h \
+  ../../include/onstartup.h \
+  ../../include/carray.h \
+  ../../include/ctypes.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/globals.h
+parsim/creceivedexception.o: parsim/creceivedexception.cc \
+  parsim/creceivedexception.h \
+  ../../include/cexception.h \
+  ../../include/defs.h \
+  ../../include/opp_string.h \
+  ../../include/util.h
+parsim/parsimutil.o: parsim/parsimutil.cc \
+  ../../include/cenvir.h \
+  parsim/parsimutil.h \
+  ../../include/cexception.h \
+  ../../include/defs.h \
+  ../../include/opp_string.h \
+  ../../include/util.h

@@ -1,0 +1,21 @@
+%description:
+Subclassing cObject: *must* take ownership of members subclassed from cObject,
+and destructor must call drop().
+
+%global:
+
+class X : public cObject
+{
+  public:
+    cPar y;
+
+    X() : cObject() {take(&y);}
+    ~X() {drop(&y);}
+};
+
+%activity:
+
+X *x = new X();
+x->y.setName("yname");
+
+%exitcode: 0

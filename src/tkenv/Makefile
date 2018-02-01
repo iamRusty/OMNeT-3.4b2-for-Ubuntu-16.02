@@ -1,0 +1,585 @@
+#
+# Definitions to be customized by 'configure'
+#
+CXX=g++
+AR=ar cr
+SHLIB_LD=g++ -shared -fPIC
+RANLIB=ranlib
+MAKEDEPEND=opp_makedep -Y --objdirtree
+
+CFLAGS=-O2 -DNDEBUG=1 -fPIC  -DWITH_PARSIM -DWITH_NETBUILDER
+
+OMNETPP_INCL_DIR=/home/rusty/Desktop/omnetpp-3.4b2/include
+OMNETPP_BITMAP_PATH=./bitmaps;/home/rusty/Desktop/omnetpp-3.4b2/bitmaps
+OMNETPP_LIB_DIR=/home/rusty/Desktop/omnetpp-3.4b2/lib
+
+OMNETPP_VERSION=3.4b2
+OMNETPP_EDITION=Academic Public License
+
+TK_CFLAGS=-I/usr/include/tcl8.5
+
+# LIB_SUFFIX is either A_LIB_SUFFIX or SO_LIB_SUFFIX
+LIB_SUFFIX=$(SO_LIB_SUFFIX)
+
+A_LIB_SUFFIX=.a
+SO_LIB_SUFFIX=.so
+
+# The following is either '-e' (embedded Tcl code) or '' (no embedding)
+TKENV_EMBED_SUFFIX=-e
+
+#
+# Local definitions
+#
+COPTS=$(CFLAGS) -I$(OMNETPP_INCL_DIR) -I../envir $(TK_CFLAGS) -DBUILDING_TKENV
+
+OMNETPP_TKENV_DIR=/home/rusty/Desktop/omnetpp-3.4b2/src/tkenv
+
+OBJS = tkapp$(TKENV_EMBED_SUFFIX).o tkcmd.o tklib.o inspector.o \
+       inspfactory.o objinsp.o modinsp.o statinsp.o structinsp.o \
+       arrow.o visitor.o tkutil.o graphlayout.o
+
+#
+# Automatic rules
+#
+.SUFFIXES : .cc
+
+.cc.o:
+	$(CXX) -c $(COPTS) -o $@ $<
+
+#
+# Targets
+#
+default: tkenv
+
+tkenv : libtkenv$(LIB_SUFFIX)
+
+libtkenv$(A_LIB_SUFFIX) : $(OBJS)
+	$(AR) libtkenv$(A_LIB_SUFFIX) $(OBJS)
+	$(RANLIB) libtkenv$(A_LIB_SUFFIX)
+	../utils/install-lib libtkenv$(A_LIB_SUFFIX).$(OMNETPP_VERSION) $(OMNETPP_LIB_DIR) libtkenv$(A_LIB_SUFFIX)
+
+libtkenv$(SO_LIB_SUFFIX) : $(OBJS)
+	$(SHLIB_LD) -o libtkenv$(SO_LIB_SUFFIX) $(OBJS)
+	../utils/install-lib libtkenv$(SO_LIB_SUFFIX).$(OMNETPP_VERSION) $(OMNETPP_LIB_DIR) libtkenv$(SO_LIB_SUFFIX)
+
+tkapp.o : tkapp.cc
+	$(CXX) -c $(COPTS) -DOMNETPP_TKENV_DIR="\"$(OMNETPP_TKENV_DIR)\"" -DOMNETPP_BITMAP_PATH="\"$(OMNETPP_BITMAP_PATH)\"" tkapp.cc
+
+tkapp-e.o : tkapp.cc  tclcode.cc
+	$(CXX) -c $(COPTS) -DOMNETPP_BITMAP_PATH="\"$(OMNETPP_BITMAP_PATH)\"" tkapp.cc -o tkapp-e.o
+
+tclcode.cc: *.tcl
+	../utils/tcl2c tclcode.cc *.tcl
+
+missing-library:
+	@ echo '  *** No Tk installation found -- skipping Tkenv'
+
+depend:
+	$(MAKEDEPEND) -I. -I../envir -I../../include -- *.cc
+	$(MAKEDEPEND) -I. -I../envir -I../../include -fMakefile.in -- *.cc
+
+clean:
+	rm -f *.o tclcode.cc libtkenv$(A_LIB_SUFFIX) libtkenv$(SO_LIB_SUFFIX)
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+arrow.o: arrow.cc \
+  arrow.h
+graphlayout.o: graphlayout.cc \
+  graphlayout.h
+inspector.o: inspector.cc \
+  ../../include/omnetpp.h \
+  tkapp.h \
+  tklib.h \
+  inspector.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/opp_string.h \
+  ../../include/random.h \
+  ../../include/distrib.h \
+  ../../include/cexception.h \
+  ../../include/errmsg.h \
+  ../../include/cobject.h \
+  ../../include/cdefaultlist.h \
+  ../../include/csimul.h \
+  ../../include/macros.h \
+  ../../include/ctypes.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cllist.h \
+  ../../include/globals.h \
+  ../../include/cwatch.h \
+  ../../include/cstlwatch.h \
+  ../../include/cpar.h \
+  ../../include/cgate.h \
+  ../../include/cmessage.h \
+  ../../include/cpacket.h \
+  ../../include/cmsgheap.h \
+  ../../include/cmodule.h \
+  ../../include/csimplemodule.h \
+  ../../include/cstat.h \
+  ../../include/cdensity.h \
+  ../../include/chist.h \
+  ../../include/cvarhist.h \
+  ../../include/cpsquare.h \
+  ../../include/cksplit.h \
+  ../../include/coutvect.h \
+  ../../include/cdetect.h \
+  ../../include/ctopo.h \
+  ../../include/cfsm.h \
+  ../../include/protocol.h \
+  ../../include/cenvir.h \
+  ../../include/cenum.h \
+  ../../include/cclassdescriptor.h \
+  ../../include/onstartup.h \
+  ../../include/cchannel.h \
+  ../../include/cdispstr.h \
+  ../../include/envirext.h \
+  ../../include/cconfig.h \
+  ../../include/cxmlelement.h \
+  ../../include/cstrtokenizer.h \
+  ../../include/cscheduler.h \
+  ../../include/compat.h \
+  ../../include/cparsimcomm.h \
+  ../../include/ccommbuffer.h \
+  ../../include/crng.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/ccoroutine.h \
+  ../../include/platdep/time.h \
+  ../envir/omnetapp.h \
+  ../envir/args.h \
+  ../envir/envdefs.h \
+  tkutil.h \
+  tkdefs.h
+inspfactory.o: inspfactory.cc \
+  ../../include/omnetpp.h \
+  tkapp.h \
+  tklib.h \
+  inspector.h \
+  inspfactory.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/opp_string.h \
+  ../../include/random.h \
+  ../../include/distrib.h \
+  ../../include/cexception.h \
+  ../../include/errmsg.h \
+  ../../include/cobject.h \
+  ../../include/cdefaultlist.h \
+  ../../include/csimul.h \
+  ../../include/macros.h \
+  ../../include/ctypes.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cllist.h \
+  ../../include/globals.h \
+  ../../include/cwatch.h \
+  ../../include/cstlwatch.h \
+  ../../include/cpar.h \
+  ../../include/cgate.h \
+  ../../include/cmessage.h \
+  ../../include/cpacket.h \
+  ../../include/cmsgheap.h \
+  ../../include/cmodule.h \
+  ../../include/csimplemodule.h \
+  ../../include/cstat.h \
+  ../../include/cdensity.h \
+  ../../include/chist.h \
+  ../../include/cvarhist.h \
+  ../../include/cpsquare.h \
+  ../../include/cksplit.h \
+  ../../include/coutvect.h \
+  ../../include/cdetect.h \
+  ../../include/ctopo.h \
+  ../../include/cfsm.h \
+  ../../include/protocol.h \
+  ../../include/cenvir.h \
+  ../../include/cenum.h \
+  ../../include/cclassdescriptor.h \
+  ../../include/onstartup.h \
+  ../../include/cchannel.h \
+  ../../include/cdispstr.h \
+  ../../include/envirext.h \
+  ../../include/cconfig.h \
+  ../../include/cxmlelement.h \
+  ../../include/cstrtokenizer.h \
+  ../../include/cscheduler.h \
+  ../../include/compat.h \
+  ../../include/cparsimcomm.h \
+  ../../include/ccommbuffer.h \
+  ../../include/crng.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/ccoroutine.h \
+  ../../include/platdep/time.h \
+  ../envir/omnetapp.h \
+  ../envir/args.h \
+  ../envir/envdefs.h \
+  tkutil.h \
+  tkdefs.h
+modinsp.o: modinsp.cc \
+  ../../include/csimplemodule.h \
+  ../../include/cchannel.h \
+  ../../include/cgate.h \
+  ../../include/cmessage.h \
+  ../../include/cpar.h \
+  ../../include/carray.h \
+  ../../include/coutvect.h \
+  ../../include/cstat.h \
+  ../../include/cdensity.h \
+  ../../include/cdispstr.h \
+  modinsp.h \
+  tkapp.h \
+  tklib.h \
+  inspfactory.h \
+  arrow.h \
+  graphlayout.h \
+  ../../include/cmodule.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/cqueue.h \
+  ../../include/csimul.h \
+  ../../include/cdefaultlist.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  inspector.h \
+  ../envir/omnetapp.h \
+  tkutil.h \
+  tkdefs.h \
+  ../envir/args.h \
+  ../envir/envdefs.h \
+  ../../include/envirext.h \
+  ../../include/cconfig.h \
+  ../../include/platdep/time.h \
+  ../../include/macros.h \
+  ../../include/ctypes.h
+objinsp.o: objinsp.cc \
+  ../../include/omnetpp.h \
+  tkapp.h \
+  tklib.h \
+  inspfactory.h \
+  objinsp.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/opp_string.h \
+  ../../include/random.h \
+  ../../include/distrib.h \
+  ../../include/cexception.h \
+  ../../include/errmsg.h \
+  ../../include/cobject.h \
+  ../../include/cdefaultlist.h \
+  ../../include/csimul.h \
+  ../../include/macros.h \
+  ../../include/ctypes.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cllist.h \
+  ../../include/globals.h \
+  ../../include/cwatch.h \
+  ../../include/cstlwatch.h \
+  ../../include/cpar.h \
+  ../../include/cgate.h \
+  ../../include/cmessage.h \
+  ../../include/cpacket.h \
+  ../../include/cmsgheap.h \
+  ../../include/cmodule.h \
+  ../../include/csimplemodule.h \
+  ../../include/cstat.h \
+  ../../include/cdensity.h \
+  ../../include/chist.h \
+  ../../include/cvarhist.h \
+  ../../include/cpsquare.h \
+  ../../include/cksplit.h \
+  ../../include/coutvect.h \
+  ../../include/cdetect.h \
+  ../../include/ctopo.h \
+  ../../include/cfsm.h \
+  ../../include/protocol.h \
+  ../../include/cenvir.h \
+  ../../include/cenum.h \
+  ../../include/cclassdescriptor.h \
+  ../../include/onstartup.h \
+  ../../include/cchannel.h \
+  ../../include/cdispstr.h \
+  ../../include/envirext.h \
+  ../../include/cconfig.h \
+  ../../include/cxmlelement.h \
+  ../../include/cstrtokenizer.h \
+  ../../include/cscheduler.h \
+  ../../include/compat.h \
+  ../../include/cparsimcomm.h \
+  ../../include/ccommbuffer.h \
+  ../../include/crng.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/ccoroutine.h \
+  ../../include/platdep/time.h \
+  ../envir/omnetapp.h \
+  ../envir/args.h \
+  ../envir/envdefs.h \
+  inspector.h \
+  tkutil.h \
+  tkdefs.h \
+  structinsp.h
+statinsp.o: statinsp.cc \
+  ../../include/cmodule.h \
+  ../../include/cmessage.h \
+  ../../include/cpar.h \
+  ../../include/carray.h \
+  ../../include/coutvect.h \
+  ../../include/cstat.h \
+  ../../include/cdensity.h \
+  tkapp.h \
+  tklib.h \
+  inspfactory.h \
+  statinsp.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/csimul.h \
+  ../../include/cdefaultlist.h \
+  ../../include/cenvir.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../envir/omnetapp.h \
+  ../envir/args.h \
+  ../envir/envdefs.h \
+  ../../include/envirext.h \
+  ../../include/cconfig.h \
+  ../../include/platdep/time.h \
+  ../../include/macros.h \
+  inspector.h \
+  ../../include/ctypes.h \
+  tkutil.h \
+  tkdefs.h
+structinsp.o: structinsp.cc \
+  ../../include/cenum.h \
+  ../../include/cclassdescriptor.h \
+  tkapp.h \
+  tklib.h \
+  inspfactory.h \
+  structinsp.h \
+  ../../include/cobject.h \
+  ../../include/cenvir.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../envir/omnetapp.h \
+  ../../include/carray.h \
+  ../../include/globals.h \
+  ../envir/args.h \
+  ../envir/envdefs.h \
+  ../../include/envirext.h \
+  ../../include/cconfig.h \
+  ../../include/platdep/time.h \
+  ../../include/onstartup.h \
+  ../../include/macros.h \
+  inspector.h \
+  ../../include/ctypes.h \
+  tkutil.h \
+  tkdefs.h
+tkapp.o: tkapp.cc \
+  ../envir/appreg.h \
+  ../../include/cenvir.h \
+  ../../include/csimplemodule.h \
+  ../../include/cmessage.h \
+  ../../include/ctypes.h \
+  ../envir/speedmtr.h \
+  ../../include/cscheduler.h \
+  tkdefs.h \
+  tkapp.h \
+  tklib.h \
+  inspector.h \
+  inspfactory.h \
+  modinsp.h \
+  ../../include/platdep/time.h \
+  ../utils/ver.h \
+  ../../include/globals.h \
+  ../../include/onstartup.h \
+  ../../include/cobject.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/cmodule.h \
+  ../../include/ccoroutine.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/csimul.h \
+  ../../include/cdefaultlist.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../../include/cpar.h \
+  ../envir/envdefs.h \
+  ../envir/omnetapp.h \
+  ../envir/args.h \
+  ../../include/envirext.h \
+  ../../include/cconfig.h \
+  tkutil.h \
+  ../../include/macros.h
+tkcmd.o: tkcmd.cc \
+  ../../include/cenvir.h \
+  ../../include/carray.h \
+  ../../include/csimul.h \
+  ../../include/csimplemodule.h \
+  ../../include/cmessage.h \
+  ../../include/cchannel.h \
+  ../../include/cstat.h \
+  ../../include/cwatch.h \
+  ../../include/ctypes.h \
+  ../../include/cclassdescriptor.h \
+  ../../include/cdispstr.h \
+  ../../include/cenum.h \
+  tkapp.h \
+  tklib.h \
+  inspector.h \
+  inspfactory.h \
+  ../envir/matchexpression.h \
+  ../envir/matchableobject.h \
+  ../envir/patternmatcher.h \
+  visitor.h \
+  ../envir/fsutils.h \
+  ../../include/defs.h \
+  ../../include/cobject.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/errmsg.h \
+  ../../include/globals.h \
+  ../../include/cmsgheap.h \
+  ../../include/ccoroutine.h \
+  ../../include/coutvect.h \
+  ../../include/onstartup.h \
+  ../../include/cmodule.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/cpar.h \
+  ../envir/omnetapp.h \
+  ../envir/args.h \
+  ../envir/envdefs.h \
+  ../../include/envirext.h \
+  ../../include/cconfig.h \
+  ../../include/platdep/time.h \
+  tkutil.h \
+  tkdefs.h \
+  ../../include/macros.h
+tklib.o: tklib.cc \
+  tklib.h \
+  tkapp.h \
+  ../envir/omnetapp.h \
+  ../../include/carray.h \
+  ../../include/globals.h \
+  ../../include/cenvir.h \
+  ../../include/cexception.h \
+  ../envir/args.h \
+  ../envir/envdefs.h \
+  ../../include/envirext.h \
+  ../../include/cconfig.h \
+  ../../include/platdep/time.h \
+  ../../include/cobject.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cvisitor.h \
+  ../../include/onstartup.h \
+  ../../include/opp_string.h
+tkutil.o: tkutil.cc \
+  ../../include/cobject.h \
+  ../../include/cmodule.h \
+  ../../include/csimul.h \
+  tkapp.h \
+  visitor.h \
+  tkutil.h \
+  ../../include/cenvir.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/carray.h \
+  ../../include/cqueue.h \
+  ../../include/cgate.h \
+  ../../include/cdefaultlist.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  ../../include/coutvect.h \
+  ../envir/omnetapp.h \
+  ../envir/args.h \
+  ../envir/envdefs.h \
+  ../../include/envirext.h \
+  ../../include/cconfig.h \
+  ../../include/platdep/time.h \
+  ../envir/patternmatcher.h \
+  ../envir/matchexpression.h \
+  ../envir/matchableobject.h \
+  tkdefs.h
+visitor.o: visitor.cc \
+  ../../include/cenvir.h \
+  ../../include/cobject.h \
+  ../../include/cmodule.h \
+  ../../include/cmessage.h \
+  ../../include/cqueue.h \
+  ../../include/cstat.h \
+  ../../include/coutvect.h \
+  ../../include/cwatch.h \
+  ../../include/cfsm.h \
+  ../../include/cpar.h \
+  ../../include/cchannel.h \
+  ../../include/cgate.h \
+  ../envir/patternmatcher.h \
+  visitor.h \
+  ../../include/defs.h \
+  ../../include/util.h \
+  ../../include/cpolymorphic.h \
+  ../../include/cexception.h \
+  ../../include/cvisitor.h \
+  ../../include/opp_string.h \
+  ../../include/ccoroutine.h \
+  ../../include/globals.h \
+  ../../include/carray.h \
+  ../../include/csimul.h \
+  ../../include/cdefaultlist.h \
+  ../../include/onstartup.h \
+  ../../include/errmsg.h \
+  ../../include/cmsgheap.h \
+  tkapp.h \
+  ../envir/matchexpression.h \
+  ../envir/matchableobject.h \
+  ../envir/omnetapp.h \
+  ../envir/args.h \
+  ../envir/envdefs.h \
+  ../../include/envirext.h \
+  ../../include/cconfig.h \
+  ../../include/platdep/time.h

@@ -1,0 +1,259 @@
+#
+# This file is included by all Makefile.vc's. It contains flags and settings
+# for compiling with MSVC. You are free to edit the settings in here.
+#
+
+#
+# base directories
+#
+# Edit these variables!
+#
+# Use forward slashes ('/') in the dir names, not backslashes ('\')!
+# Don't use relative directories!
+# Directory names with spaces may also cause problems, it's better to use
+# short file names (e.g. 'C:/PROGRA~1' instead of 'C:/Program files').
+#
+OMNETPP_ROOT=c:/home/omnetpp
+
+# Version. Should ideally come from the 'Version' file...
+OMNETPP_VERSION=omnetpp-3.4
+
+#
+# Directory and version of Tcl/Tk and BLT, for example "8.4" and "2.4".
+# Tcl/Tk 8.4 (minimum 8.4.0) and BLT 2.4 required.
+# Leave BLT_VER empty if you don't have BLT. BLT is expected to reside
+# in the same directory tree as Tcl/Tk.
+#
+TK_DIR=c:/home/tools/Tcl-8.4.11
+TK_VER=8.4
+BLT_VER=2.4
+
+#
+# MPI directory. MPI is only needed for parallel distributed execution.
+# Leave empty if you don't have MPI.
+#
+MPI_DIR=
+#MPI_DIR=c:/home/tools/mpi
+
+#
+# Choice of XML parser. Possible choices: libxml, expat or none.
+# Preferred one is libxml, at least 2.6.0 (expat cannot perform DTD validation
+# and default attribute completion.)
+# If set to 'none', nedtool will compile but won't support XML input,
+# and NED parameters of type xml cannot be used.
+#
+XMLPARSER=libxml
+#XMLPARSER=expat
+#XMLPARSER=none
+
+#
+# Location of Expat (only used if XMLPARSER=expat, see above)
+#
+EXPAT_DIR=c:/home/tools/expat-1.95.8
+
+#
+# Location of LibXML2 and its supporting library ICONV (only used if XMLPARSER=libxml)
+#
+ICONV_DIR=c:/home/tools/iconv-1.9.1.win32
+LIBXML_DIR=c:/home/tools/libxml2-2.6.20.win32
+
+#
+# Directory of various tools
+#
+
+# Perl: needed by opp_makedep, opp_msgc, opp_neddoc, opp_test etc.
+PERL=perl.exe
+
+# flex/bison: only needed it you want to modify NEDC or GNED
+YACC=c:/home/tools/bison-2.1/bin/bison.exe
+LEX=c:/home/tools/UnxUtils/usr/local/wbin/flex.exe
+
+# Doxygen is needed for generating HTML documentation from C++
+DOXYGEN_DIR=c:/home/tools/doxygen
+
+# Following tools are needed by opp_neddoc for generating model documentation.
+# XSLTPROC is part of LibXSLT. DOT comes from the GraphViz package.
+# XSLTPROC is the only required one, GHOSTSCRIPT, GIFTRANS and DOT are optional
+# but of course affect documentation quality.
+XSLTPROC=c:/home/tools/libxslt-1.1.14p.win32/bin/xsltproc.exe
+GHOSTSCRIPT=c:/home/tools/gs/gs8.11/bin/gswin32c.exe
+GIFTRANS=c:/home/tools/misc/giftrans.exe
+DOT=c:/home/tools/Graphviz/bin/dot.exe
+
+#
+# If you don't want to build some of the components below, substitute
+# missing-library
+#
+TKENV_IF_POSSIBLE=tkenv
+GNED_IF_POSSIBLE=gned
+SCALARS_IF_POSSIBLE=scalars
+
+#
+# It is possible to have the Tcl files embedded into the compiled OMNeT++
+# libraries and executables. This can be useful if you want to ship
+# self-contained standalone executables which do not rely on external
+# Tcl scripts.
+#
+# This option is available at present for Tkenv, GNED, Scalars and Plove.
+# Set the following variables to "yes" to enable embedding Tcl files.
+#
+EMBED_TCL_CODE=yes
+
+#
+# It is possible to compile GNED, Scalars and Plove as Windows GUI apps
+# (ie. not as console apps). Set the following variable to "yes" to enable
+# compiling GUI apps.
+#
+USE_WINMAIN=yes
+
+#
+# Set to "yes" to enable simulation executables load NED files dynamically.
+#
+WITH_NETBUILDER=yes
+
+#
+# Set to "yes" to enable the parallel distributed simulation feature.
+#
+WITH_PARSIM=yes
+
+#
+# Choose between debug and release libraries here
+#
+CFLAGS=$(CFLAGS_RELEASE)
+LDFLAGS=$(LDFLAGS_RELEASE)
+#CFLAGS=$(CFLAGS_DEBUG)
+#LDFLAGS=$(LDFLAGS_DEBUG)
+
+
+#==============================================================================
+#====== !!!         Try not to change anything below this line       !!! ======
+#==============================================================================
+
+
+#
+# Other directories & files based on the base dirs
+#
+OMNETPP_SRC_DIR=$(OMNETPP_ROOT)/src
+OMNETPP_SAMPLES_DIR=$(OMNETPP_ROOT)/samples
+OMNETPP_TEST_DIR=$(OMNETPP_ROOT)/test
+OMNETPP_DOC_DIR=$(OMNETPP_ROOT)/doc
+
+OMNETPP_BIN_DIR=$(OMNETPP_ROOT)/bin
+OMNETPP_INCL_DIR=$(OMNETPP_ROOT)/include
+OMNETPP_LIB_DIR=$(OMNETPP_ROOT)/lib
+
+OMNETPP_TKENV_DIR=$(OMNETPP_ROOT)/src/tkenv
+OMNETPP_GNED_DIR=$(OMNETPP_ROOT)/src/gned
+OMNETPP_SCALARS_DIR=$(OMNETPP_ROOT)/src/scalars
+OMNETPP_PLOVE_DIR=$(OMNETPP_ROOT)/src/plove
+OMNETPP_BITMAP_PATH=./bitmaps;$(OMNETPP_ROOT)/bitmaps
+
+OMNETPP_EDITION=Academic Public License
+
+#
+# Libraries
+#
+
+TK_INCL_DIR=$(TK_DIR)/include
+TK_LIB_DIR=$(TK_DIR)/lib
+TCL_LIB=tcl$(TK_VER:.=).lib
+TK_LIB=tk$(TK_VER:.=).lib
+_TCL_LIBRARY=$(TK_DIR)/lib/tcl$(TK_VER)
+
+!if "$(BLT_VER)"!=""
+HAVE_BLT=yes
+BLT_LIB=blt$(BLT_VER:.=).lib
+!endif
+
+!if "$(MPI_DIR)"!=""
+HAVE_MPI=yes
+!endif
+MPI_INCL_DIR=$(MPI_DIR)/include
+
+EXPAT_CFLAGS=/I "$(EXPAT_DIR)/source/lib"
+EXPAT_LIBS=libexpat.lib /libpath:"$(EXPAT_DIR)/libs"
+
+LIBXML_CFLAGS=/I "$(ICONV_DIR)/include" /I "$(LIBXML_DIR)/include"
+LIBXML_LIBS=libxml2.lib iconv.lib wsock32.lib /libpath:"$(LIBXML_DIR)/lib" /libpath:"$(ICONV_DIR)/lib"
+
+# compiler and linker switches necessary to build an app with Tcl/Tk, MPI, expat, etc.
+# (NO_CONST is for testing code compatibility with systems where tcl.h comes without 'const')
+TK_CFLAGS=/I "$(TK_INCL_DIR)" /DNO_CONST
+TK_LIBS=$(TCL_LIB) $(TK_LIB) $(BLT_LIB) /libpath:"$(TK_LIB_DIR)"
+MPI_CFLAGS=/I "$(MPI_INCL_DIR)"
+MPI_LIBS=
+
+!if "$(XMLPARSER)"=="expat"
+XML_CFLAGS=$(EXPAT_CFLAGS)
+XML_LIBS=$(EXPAT_LIBS)
+!elseif "$(XMLPARSER)"=="libxml"
+XML_CFLAGS=$(LIBXML_CFLAGS)
+XML_LIBS=$(LIBXML_LIBS)
+!elseif "$(XMLPARSER)"!="none"
+!error XMLPARSER must be set to "expat", "libxml" or "none" in configuser.vc
+!endif
+
+# winsock is needed by libxml as well as the sockets example, maybe in the future by other libs too
+SYS_LIBS=wsock32.lib
+
+#
+# Tools
+#
+
+# MSVC programs
+CXX=cl.exe /nologo
+LINK=link.exe /nologo
+AS=cl.exe /nologo
+AR=lib.exe /nologo
+SHLIB_LD=$(LINK) /dll $(LDFLAGS)
+RC=rc.exe
+
+# dependency generator (needs Perl!)
+MAKEDEPEND=$(PERL) $(OMNETPP_ROOT)/src/utils/opp_makedep -Y --objsuffix .obj --objdirtree
+
+# OMNeT++ tools
+NEDC=$(OMNETPP_BIN_DIR)/nedtool
+MSGC=$(OMNETPP_BIN_DIR)/opp_msgc
+REPLACE=$(OMNETPP_SRC_DIR)/utils/opp_replace
+WISH=$(TK_DIR)/bin/wish$(TK_VER:.=).exe
+DOXYGEN=$(DOXYGEN_DIR)/bin/doxygen
+
+#
+# Configuration
+#
+
+# Compiler switches (see MSDN for more info)
+#   /EHsc: synchronous exception handling, assume extern "C" funcs don't throw exceptions
+#   /GR: enable RTTI
+#   /FD: generate file dependencies
+#   /Zm200: internal compiler memory allocation 200% (needed by some omnetpp lib sources)
+#   /Od: disable optimizations (for debug code)
+#   /O2: optimize for speed
+#   /RTCs: stack frame runtime checking (Note: don't use /RTCu & /RTC1, as they cause a
+#          problem in bison's boilerplate code (bison.simple, "uninitialized var 'yyval'")
+#   /Zi: build program database (PDB file) which contains debug info
+#   /DNDEBUG: #defines NDEBUG (removes assert() from generated code)
+# Linker switches:
+#   /debug: build debug executable
+#   /subsystem:console: build console-mode application (also works for GUI apps)
+#   /opt:noref: keep functions and/or data that is never referenced (DOES NOT WORK!)
+#       see http://forums.microsoft.com/MSDN/ShowPost.aspx?PostID=144087&SiteID=1&mode=1
+#
+CFLAGS_DEBUG=/EHsc /GR /FD /Zm250 /Od /RTCs /Zi /D_CRT_SECURE_NO_DEPRECATE
+LDFLAGS_DEBUG=/subsystem:console /opt:noref /debug
+
+CFLAGS_RELEASE=/EHsc /GR /FD /Zm250 /O2 /DNDEBUG /D_CRT_SECURE_NO_DEPRECATE
+LDFLAGS_RELEASE=/subsystem:console /opt:noref
+
+# LIB_SUFFIX is either .lib or .dll
+LIB_SUFFIX=.lib
+
+HAVE_DLOPEN=0
+
+!if "$(WITH_PARSIM)"=="yes"
+CFLAGS=$(CFLAGS) /DWITH_PARSIM
+!endif
+
+!if "$(WITH_NETBUILDER)"=="yes"
+CFLAGS=$(CFLAGS) /DWITH_NETBUILDER
+!endif

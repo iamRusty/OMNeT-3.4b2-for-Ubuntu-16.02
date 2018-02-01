@@ -1,0 +1,45 @@
+%description:
+check that "like" keyword works
+
+%file: {}.ned
+
+simple {GenMod}
+endsimple
+
+module {Net}
+  parameters:
+    mod_type : string;
+  submodules:
+    specMod: mod_type like {GenMod};
+endmodule
+
+network {net} : {Net}
+endnetwork
+
+%file: {}.cc
+
+#include <omnetpp.h>
+
+class {GenMod} : public cSimpleModule
+{
+    Module_Class_Members({GenMod},cSimpleModule,16384)
+    virtual void activity();
+};
+
+Define_Module({GenMod});
+
+void {GenMod}::activity()
+{
+   ev << "Here!" << endl;
+}
+
+%inifile: {}.ini
+[General]
+network={net}
+warnings=yes
+[Parameters]
+*.mod_type = "{GenMod}"
+
+%contains-regex: stdout
+Here!
+

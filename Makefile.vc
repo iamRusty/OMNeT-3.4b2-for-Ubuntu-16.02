@@ -1,0 +1,164 @@
+#=====================================================================
+#
+# Toplevel makefile for OMNeT++ libraries and programs
+#
+# platform: Windows NT, Windows 2000, XP
+# compiler: MSVC 6.0/7.x
+#
+#=====================================================================
+
+#
+# Options
+#
+include configuser.vc
+
+MOPTS=/nologo
+MAKEFILE=/F Makefile.vc
+
+# Win9x, ME not supported (shell is crippled)
+!if "$(OS)"!="Windows_NT"
+!error This makefile only works on NT kernel (NT4.0, Win2K, XP)
+!endif
+
+# envir_ilib only needed if dlls are to be built
+!if "$(LIB_SUFFIX)"==".dll"
+ENVIR_ILIB=envir_ilib
+!else
+ENVIR_ILIB=
+!endif
+
+
+#=====================================================================
+#
+# Main targets
+#
+#=====================================================================
+
+
+all: check-env components reminder
+
+components: base samples
+
+
+#=====================================================================
+#
+# OMNeT++ components
+#
+#=====================================================================
+
+BASE=nedxml sim envir cmdenv tkenv utils nedc gned scalars plove
+SAMPLES=aloha cqn dyna fifo hcube hist neddemo p-to-p queueing routing queues tictoc tokenring sockets
+
+#
+# Group targets.
+#
+base: $(ENVIR_ILIB) $(BASE)
+samples: rundemo configsamples $(SAMPLES)
+
+# dependencies (because of ver.h, tcl2c, opp_msgc, etc)
+nedxml sim envir cmdenv tkenv nedc gned scalars plove: ver_h utils
+nedc : nedxml
+sim : nedc
+$(SAMPLES) : rundemo configsamples
+
+#
+# Core libraries and programs
+#
+envir_ilib:
+	@echo ===== Compiling $@ ====
+	cd /d $(OMNETPP_SRC_DIR:/=\)\envir && $(MAKE) $(MOPTS) $(MAKEFILE) envir.ilib
+
+$(BASE):
+	@echo ===== Compiling $@ ====
+	cd /d $(OMNETPP_SRC_DIR:/=\)\$@ && $(MAKE) $(MOPTS) $(MAKEFILE)
+
+#
+# Sample programs
+#
+rundemo:
+	echo @$(WISH:/=\) -f "%~dpn0" ^%* > $(OMNETPP_SAMPLES_DIR:/=\)\rundemo.bat
+
+$(SAMPLES):
+	@echo ===== Compiling $@ ====
+	cd /d $(OMNETPP_SAMPLES_DIR:/=\)\$@ && $(MAKE) $(MOPTS) $(MAKEFILE)
+
+#
+# Documentation
+#
+apis:
+	cd /d $(OMNETPP_DOC_DIR:/=\)\src && $(MAKE) $(MOPTS) $(MAKEFILE) apis
+
+docu:
+	cd /d $(OMNETPP_DOC_DIR:/=\)\src && $(MAKE) $(MOPTS) $(MAKEFILE)
+
+#
+# Tests
+#
+tests: check-env base
+	@echo ===== Running tests ====
+        @cd /d $(OMNETPP_TEST_DIR:/=\) && call runtest.cmd
+
+#=====================================================================
+#
+# Utilities
+#
+#=====================================================================
+
+check-env:
+	@echo ===== Checking environment =====
+	@if not .%OS%.==.Windows_NT. echo ERROR: This makefile can ONLY be used on NT4.0, Win2K or XP! && exit 1
+	@echo  Checking if $(CXX) works...
+	@$(CXX) /? /nologo <nul > nul || echo ERROR: Could not run $(CXX). Probably PATH does not contain its BIN or DLL directory. && exit 1
+	@echo Checking if OMNETPP_ROOT is correctly set...
+	@cd /d $(OMNETPP_ROOT:/=\) || echo ERROR: The directory defined in configuser.vc as OMNETPP_ROOT does not exist. && exit 1
+	@echo Checking if TCL_LIB/TCL_VER is correctly set...
+	@cd /d $(_TCL_LIBRARY:/=\) || echo ERROR: The directory $(_TCL_LIBRARY) does not exist. TK_DIR or TK_VER defined in configuser.vc might be wrong. && exit 1
+
+ver_h:
+	@cd /d $(OMNETPP_SRC_DIR:/=\)\utils && copy ver.h.base ver.h && echo #define OMNETPP_RELEASE "$(OMNETPP_VERSION)" >>ver.h && echo #define OMNETPP_EDITION "$(OMNETPP_EDITION)" >>ver.h
+
+configsamples:
+	@echo ===== Configuring .dsp files for samples =====
+	cd /d $(OMNETPP_SAMPLES_DIR:/=\) && cc2cpp.bat
+	for %%i in ( $(SAMPLES) ) do \
+	    cd /d $(OMNETPP_SAMPLES_DIR:/=\)\%%i && \
+	    $(REPLACE:/=\) %%i.dsp.in - "@OMNETPP_INCL_DIR@" "$(OMNETPP_INCL_DIR)" | \
+	    $(REPLACE:/=\) -          - "@OMNETPP_LIB_DIR@"  "$(OMNETPP_LIB_DIR)"  | \
+	    $(REPLACE:/=\) -          - "@OMNETPP_BIN_DIR@"  "$(OMNETPP_BIN_DIR:/=\)"  | \
+	    $(REPLACE:/=\) -          - "@XML_LIBS@"         "$(XML_LIBS)" | \
+	    $(REPLACE:/=\) -    %%i.dsp "@TK_LIBS@"          "$(TK_LIBS)"
+
+clean:
+	-for %%i in ( $(BASE) ) do \
+	    cd /d $(OMNETPP_SRC_DIR:/=\)\%%i && $(MAKE) $(MOPTS) $(MAKEFILE) clean
+	-del /q $(OMNETPP_BIN_DIR:/=\)\*.
+	-del /q $(OMNETPP_BIN_DIR:/=\)\*.exe
+	-del /q $(OMNETPP_BIN_DIR:/=\)\*.bat
+	-del /q $(OMNETPP_BIN_DIR:/=\)\opp_*.*
+	-del /q $(OMNETPP_BIN_DIR:/=\)\neddoc.xsl
+	-del /q $(OMNETPP_LIB_DIR:/=\)\*.lib
+	-del /q $(OMNETPP_LIB_DIR:/=\)\*.dll
+	-del /q $(OMNETPP_LIB_DIR:/=\)\*.ilib
+	-del /q $(OMNETPP_LIB_DIR:/=\)\*.pdb
+	-for %%i in ( $(SAMPLES) ) do \
+	    cd /d $(OMNETPP_SAMPLES_DIR:/=\)\%%i && $(MAKE) $(MOPTS) $(MAKEFILE) clean
+
+depend:
+	for %%i in ( $(BASE) ) do \
+	    cd /d $(OMNETPP_SRC_DIR:/=\)\%%i && $(MAKE) $(MOPTS) $(MAKEFILE) depend
+	for %%i in ( $(SAMPLES) ) do \
+	    cd /d $(OMNETPP_SAMPLES_DIR:/=\)\%%i && $(MAKE) $(MOPTS) $(MAKEFILE) depend
+
+makefiles:
+	cd /d $(OMNETPP_SAMPLES_DIR:/=\) && cc2cpp.bat
+	for %%i in ( $(SAMPLES) ) do \
+	    cd /d $(OMNETPP_SAMPLES_DIR:/=\)\%%i && call opp_nmakemake -f
+
+reminder:
+!IF "$(TCL_LIBRARY)" == ""
+	@echo ***
+	@echo *** Don't forget to set the TCL_LIBRARY environment variable!
+	@echo *** TCL_LIBRARY=$(_TCL_LIBRARY)
+	@echo ***
+!ENDIF
+

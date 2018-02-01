@@ -1,0 +1,70 @@
+Installing OMNeT++ on Unix
+==========================
+
+1. Installing OMNeT++
+
+Download the omnetpp source code and documentation from the omnetpp site.
+Make sure you select to download the Unix archive omnetpp.tgz.
+
+Copy the omnetpp archive to the directory where you want to install it
+(usually your home directory). Extract the archive using the command:
+
+    tar zxvf omnetpp.tgz
+
+A sub-directory called omnetpp will be created which will contain the simulator
+files. You should now add the following lines to your startup file (.bashrc
+or .bash_profile if you're using bash; .profile if you're using some other
+sh-like shell):
+
+    export PATH=$PATH:~/omnetpp/bin
+    export LD_LIBRARY_PATH=~/omnetpp/lib
+
+For these variables to be included in the environment you will need to
+restart the shell before proceeding (logout and login again).
+
+First you should check configure.user to make sure it contains the settings
+you need:
+    vi configure.user
+
+Then the usual GNU-like stuff:
+    ./configure
+    make
+
+You should now test all samples and check they run correctly. As an example,
+the dyna example is started by entering the following commands:
+
+    cd ~/omnetpp/samples/dyna
+    ./dyna
+
+By default the samples will run using the Tcl/Tk environment. You should see
+nice gui windows and dialogs.
+
+
+2. Reconfiguring the libraries
+
+If you need to recompile the OMNeT++ components with different flags (e.g.
+for debugging or optimized for speed), then cd to the top-level omnetpp
+directory, edit configure.user accordingly, then say:
+
+    ./configure
+    make clean
+    make
+
+If you want to recompile just a single library, then cd to the directory
+of the library and type:
+
+    make clean
+    make
+
+NOTE: the 'install-local' make target found in earlier OMNeT++ versions
+was removed in 2.0beta4. The built libraries and programs are immediately
+copied to the lib/ and bin/ subdirs.
+
+
+3. Portability issues
+
+OMNeT++ has been tested on Linux, but it should work on other Unixes too.
+It probably makes things easier if you have gcc and the usual GNU tools
+installed, but you should be able to get along using other C++ compilers too.
+If you get it to work, please send me a mail!
+

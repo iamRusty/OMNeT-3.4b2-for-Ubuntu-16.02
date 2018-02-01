@@ -1,0 +1,26 @@
+%description:
+Entities are substituted.
+
+THIS TEST DOES NOT PASS WITH EXPAT -- IT DOES NOT SUPPORT DTD VALIDATION.
+
+%file: {}.dtd
+<!ENTITY xrul "xml rulez">
+<!ELEMENT foo ANY>
+<!ELEMENT bar ANY>
+<!ATTLIST bar
+   att   CDATA  #IMPLIED
+>
+
+%file: {}.xml
+<?xml version="1.0" ?>
+<!DOCTYPE foo SYSTEM "./{}.dtd">
+<foo>
+    <bar att="&xrul;!">Hey, &xrul;!</bar>
+</foo>
+
+%activity:
+cXMLElement *node = ev.getXMLDocument("{}.xml");
+node->debugDump();
+
+%contains: stdout
+<bar att="xml rulez!">Hey, xml rulez!</bar>

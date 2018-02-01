@@ -1,0 +1,123 @@
+#=====================================================================
+#
+# toplevel makefile for OMNeT++ libraries and programs
+#
+#=====================================================================
+
+#
+# Directories
+#
+OMNETPP_BIN_DIR =       @OMNETPP_BIN_DIR@
+OMNETPP_LIB_DIR =       @OMNETPP_LIB_DIR@
+OMNETPP_SRC_DIR =       @OMNETPP_SRC_DIR@
+OMNETPP_INCL_DIR =      @OMNETPP_INCL_DIR@
+OMNETPP_DOC_DIR =       @OMNETPP_DOC_DIR@
+OMNETPP_SAMPLES_DIR =   @OMNETPP_SAMPLES_DIR@
+OMNETPP_TEST_DIR =      @OMNETPP_TEST_DIR@
+
+#=====================================================================
+#
+# Main targets
+#
+#=====================================================================
+
+
+all: check-env components
+
+components: base samples
+
+
+#=====================================================================
+#
+# OMNeT++ components
+#
+#=====================================================================
+
+BASE=nedxml sim envir cmdenv tkenv utils nedc gned scalars plove
+SAMPLES=aloha cqn dyna fifo hcube hist neddemo p-to-p queueing routing queues tictoc tokenring sockets
+
+#
+# Group targets.
+#
+base: $(BASE)
+samples: $(SAMPLES)
+
+# dependencies (because of ver.h, tcl2c, opp_msgc, etc)
+nedxml sim envir cmdenv tkenv nedc gned scalars plove: utils
+nedc : nedxml
+sim : nedc
+
+#
+# Core libraries and programs
+#
+$(BASE):
+	cd $(OMNETPP_SRC_DIR)/$@ && $(MAKE)
+
+#
+# Sample programs
+#
+$(SAMPLES):
+	cd $(OMNETPP_SAMPLES_DIR)/$@ && $(MAKE)
+
+#
+# Documentation
+#
+apis:
+	cd $(OMNETPP_DOC_DIR)/src && $(MAKE) apis
+
+docu:
+	cd $(OMNETPP_DOC_DIR)/src && $(MAKE)
+
+#
+# Tests
+#
+tests: check-env base
+	cd $(OMNETPP_TEST_DIR) && $(MAKE)
+
+#=====================================================================
+#
+# Utilities
+#
+#=====================================================================
+
+check-env:
+	@probefile=__probe__; \
+	if (echo '' >@OMNETPP_BIN_DIR@/$$probefile && \
+	    chmod +x @OMNETPP_BIN_DIR@/$$probefile) 2>/dev/null; then \
+	  if $$probefile >/dev/null 2>/dev/null; then :; else \
+	    echo '  *** Warning: @OMNETPP_BIN_DIR@ is not in the path, some components may not build!'; \
+	  fi; \
+	else \
+	  echo '  *** Warning: Cannot write to @OMNETPP_BIN_DIR@, does it exist?'; \
+	fi; \
+	rm -f @OMNETPP_BIN_DIR@/$$probefile; \
+	if uname | grep "CYGWIN" >/dev/null; then :; else \
+	  if echo $$LD_LIBRARY_PATH | grep "@OMNETPP_LIB_DIR@" >/dev/null; then :; else \
+	    echo '  *** Warning: Looks like @OMNETPP_LIB_DIR@ is not in LD_LIBRARY_PATH, shared libs may not work!'; \
+	  fi; \
+	fi
+
+clean:
+	for i in $(BASE); do \
+	    (cd $(OMNETPP_SRC_DIR)/$$i && $(MAKE) clean); \
+	done
+	- rm $(OMNETPP_BIN_DIR)/*
+	- rm $(OMNETPP_LIB_DIR)/*
+	for i in $(SAMPLES); do \
+	    (cd $(OMNETPP_SAMPLES_DIR)/$$i && $(MAKE) clean); \
+	done
+	cd $(OMNETPP_TEST_DIR) && $(MAKE) clean
+
+depend: utils
+	for i in $(BASE); do \
+	    (cd $(OMNETPP_SRC_DIR)/$$i && $(MAKE) depend); \
+	done
+	for i in $(SAMPLES); do \
+	    (cd $(OMNETPP_SAMPLES_DIR)/$$i && $(MAKE) depend); \
+	done
+
+makefiles:
+	for i in $(SAMPLES); do \
+	    (cd $(OMNETPP_SAMPLES_DIR)/$$i && (opp_makemake -f; opp_makemake -f -m)); \
+	done
+

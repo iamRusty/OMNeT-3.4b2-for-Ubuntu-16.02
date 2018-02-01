@@ -1,0 +1,31 @@
+%description:
+Test parameters taken by the "ancestor" operator
+
+%file: {}.ned
+
+simple {NotImplemented}
+   parameters:
+      p;
+endsimple
+
+module {Network}
+    submodules:
+        a: {NotImplemented};
+           parameters:
+               p=100;
+endmodule
+
+network {network}: {Network}
+endnetwork
+
+%file: {}.cc
+
+void dummy() 
+{
+}
+
+%exitcode: 1
+
+%contains-regex: stdout
+[Mm]odule type definition .*NotImplemented.* not found
+

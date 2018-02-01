@@ -1,0 +1,105 @@
+1. src/nedxml/nedcompiler.h
+
+    #include <string.h>
+
+2. src/sim/cmodule.cc
+
+    #include <stdlib.h>
+
+3. include/csimul.h
+
+    #include <stdlib.h>
+
+4. include/cwatch.h
+
+    #inclide <stdlib.h>
+    #include <string.h>
+
+5. src/sim/sim_std_m.cc:3732
+
+    case 4: return NULL;//(void *)(&pp->cellInfo(i)); break;
+
+6. include/carray.h
+
+    #include <stdlib.h>
+
+7. src/sim/minixpath.h
+
+    #include <stdlib.h>
+
+8. include/cstrtokenizer.h
+
+    #include <string.h>
+
+9. src/sim/parsim/parsimutil.h
+
+    #include <stdlib.h>
+
+10. include/cenvir.h:604
+
+    this->setp(this->pbase(),this->epptr());
+
+11. include/platdep/fileutil.h
+
+    #include <string.h>
+    #include <cstring>
+
+12. src/envir/patternmatch.h
+
+    #include <stdlib.h>
+    #include <string.h>
+
+13. src/envir/matchableobject.h
+
+    #include <string.h>
+    #include <stdlib.h>
+
+14. src/envir/cstrtokenizer2.h
+
+    #include <string.h>
+
+15. src/gned/tkcmd.cc
+
+    #include <stdlib.h>
+
+16. src/scalars/scalarmanager.h
+
+    #include <string.h>
+
+17. src/scalars/filetokenizer.h
+
+    #include <string.h>
+    #include <cstring>
+    #include <cstdio>
+
+18. src/plove/tkcmd.cc
+
+    #include <stdlib.h>
+
+19. src/plove/filetokenizer.h
+
+    #include <string.h>
+    #include <cstdio>
+
+20. src/plove/engine/commonnodes.h
+
+    #incude <string.h>
+
+21. src/plove/engine/commonnodes.h
+
+    #include <stdlib.h>
+    #include <cstdio>
+
+22. src/plove/engine/vectorfilereader.h
+
+    #include <stdlib.h>
+    #include <string.h>
+
+23. src/plove/engine/vectorfilewriter.h
+
+    #include <cstdio>
+    #include <stdlib.h>
+
+24. include/cpacket.h
+
+    #include <climits>

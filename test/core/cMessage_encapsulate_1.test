@@ -1,0 +1,15 @@
+%description:
+Tests if encapsulated message can be retrieved with cMessage.encapsulate().
+
+%activity:
+cMessage *payload = new cMessage;
+cMessage *frame = new cMessage;
+
+frame->encapsulate(payload);
+cMessage *payload2 = frame->decapsulate();
+
+ev << "payload==payload2: " << (payload==payload2) << endl;
+
+%contains: stdout
+payload==payload2: 1
+

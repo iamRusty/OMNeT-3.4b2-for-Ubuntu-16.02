@@ -1,0 +1,7 @@
+run 1 "alohaNet"
+scalar "alohaNet.server" 	"duration" 	8.18663537735
+scalar "alohaNet.server" 	"total frames" 	76
+scalar "alohaNet.server" 	"collided frames" 	45
+scalar "alohaNet.server" 	"total receive time" 	1.09083333333
+scalar "alohaNet.server" 	"total collision time" 	3.88942474652
+scalar "alohaNet.server" 	"channel utilization" 	0.136466928808

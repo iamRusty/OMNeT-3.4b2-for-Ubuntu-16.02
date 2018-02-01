@@ -1,0 +1,1084 @@
+dnl Process this file with autoconf to produce a configure script.
+
+dnl
+dnl OPP_CHECK_LIB(      -- macro to check availability of a library
+dnl   $1: LIBRARY-NAME, -- descriptive name (only for printout)
+dnl   $2: HEADER,       -- optional: header file to #include
+dnl   $3: FUNCTION,     -- optional: function WITH ARG LIST, e.g. floor(0.5)
+dnl   $4: CFLAGS,       -- optional: compiler flags
+dnl   $5: LDFLAGS,      -- optional: linker flags
+dnl   $6: RESULT-VAR    -- will contain "yes" or "no"
+dnl   $7: ACTION-IF-FOUND
+dnl   $8: ACTION-IF-NOT-FOUND
+dnl )
+dnl
+AC_DEFUN(OPP_CHECK_LIB,[
+   save_CXXFLAGS=$CXXFLAGS
+   save_LIBS=$LIBS
+
+   CXXFLAGS="$4"
+   LIBS="$5"
+
+   AC_MSG_CHECKING(for $1 with CFLAGS="$4" LIBS="$5")
+
+   AC_LINK_IFELSE(
+     [AC_LANG_PROGRAM([[#include <$2>]], [[$3;]])],
+     [AC_MSG_RESULT(yes); $6=yes; $7],
+     [AC_MSG_RESULT(no); $6=no; $8])
+
+   CXXFLAGS=$save_CXXFLAGS
+   LIBS=$save_LIBS
+])
+
+
+#
+# Autoconf initialization
+#
+AC_INIT
+AC_CONFIG_SRCDIR(include/omnetpp.h)
+AC_LANG(C++)
+AC_CONFIG_AUX_DIR(src/utils)
+AC_CANONICAL_HOST()
+
+#
+# OMNeT++/OMNEST version number
+#
+OMNETPP_VERSION=`cat Version | sed 's/omnetpp-//'`
+OMNETPP_EDITION="Academic Public License"
+
+#
+#  Set system/arch specific values
+#
+case $host in
+  sparc-sun-*)
+    CFLAGS_ARCH="-DSUNSPARC"
+    ;;
+  *-*-cygwin*)
+    cygwin=yes
+    windows=yes
+    ;;
+  *-*-mingw32*)
+    mingw=yes
+    windows=yes
+    ;;
+  *-hp-hpux*)
+    SO_LIB_SUFFIX=".sl"
+    ;;
+  *)
+    ;;
+esac
+
+# We'll collect in this variable the components we've detected problems with
+OPP_PROBLEM_PACKAGES=
+
+#
+# Location of various components. They are defined here so that they can be overridden in configure.user.
+#
+OMNETPP_ROOT=`pwd`
+if test "$mingw" = yes; then
+    OMNETPP_ROOT=`pwd -W`
+fi
+if test "$cygwin" = yes; then
+    OMNETPP_ROOT=`cygpath -w $OMNETPP_ROOT | sed 's|\\\\|/|g'`
+fi
+
+OMNETPP_SRC_DIR="$OMNETPP_ROOT/src"
+OMNETPP_UTILS_DIR="$OMNETPP_SRC_DIR/utils"
+OMNETPP_DOC_DIR="$OMNETPP_ROOT/doc"
+OMNETPP_SAMPLES_DIR="$OMNETPP_ROOT/samples"
+OMNETPP_TEST_DIR="$OMNETPP_ROOT/test"
+OMNETPP_BITMAP_PATH="./bitmaps;$OMNETPP_ROOT/bitmaps"
+
+OMNETPP_BIN_DIR="$OMNETPP_ROOT/bin"
+OMNETPP_INCL_DIR="$OMNETPP_ROOT/include"
+OMNETPP_LIB_DIR="$OMNETPP_ROOT/lib"
+
+OMNETPP_TKENV_DIR="$OMNETPP_SRC_DIR/tkenv"
+OMNETPP_GNED_DIR="$OMNETPP_SRC_DIR/gned"
+OMNETPP_NEDC_DIR="$OMNETPP_SRC_DIR/nedc"
+OMNETPP_SCALARS_DIR="$OMNETPP_SRC_DIR/scalars"
+OMNETPP_PLOVE_DIR="$OMNETPP_SRC_DIR/plove"
+
+
+if test "$cygwin" = yes; then
+    MYPWD="$OMNETPP_SRC_DIR/utils/cygpwd"
+else
+    MYPWD="pwd"
+fi
+
+#
+# set default library suffixes. May be already defined
+# with system/arch specific values
+#
+A_LIB_SUFFIX=${A_LIB_SUFFIX:-".a"}
+SO_LIB_SUFFIX=${SO_LIB_SUFFIX:-".so"}
+
+if test "$cygwin" = yes; then
+    EXE_SUFFIX=".exe"
+else
+    EXE_SUFFIX=
+fi
+
+
+# total stack size on NT defaults to 128MB (will be added to LDFLAGS later):
+CYGWIN_STACKSIZE=134217728
+
+build_shared_libs=if-not-windows
+#build_shared_libs=yes
+#build_shared_libs=no
+
+
+#----------------------
+# Default flags for values for other variables that come from configure.user.
+#----------------------
+
+TK_CFLAGS=
+TK_LIBS=
+
+if test -d /usr/include/tcl8.4; then
+    # this was reported to be the case on Debian 3.1 "sarge"
+    TK_CFLAGS="-I/usr/include/tcl8.4"
+fi
+if test -d /usr/include/tcl8.5; then
+    TK_CFLAGS="-I/usr/include/tcl8.5"
+fi
+
+#----------------------
+# Read user settings (and allow override the above settings)
+#----------------------
+AC_MSG_NOTICE(-----------------------------------------------)
+AC_MSG_NOTICE(reading configure.user for your custom settings)
+AC_MSG_NOTICE(-----------------------------------------------)
+. ./configure.user
+
+#----------------------
+# Set variables to defaults if not already set.
+# Note: ${VAR:-defaultvalue} used below appears to be a POSIX syntax.
+#----------------------
+CFLAGS=${CFLAGS:- -O2 -DNDEBUG=1}
+USER_CFLAGS=${USER_CFLAGS:-$CFLAGS}
+NEDCFLAGS=${NEDCFLAGS:- -Wno-unused}
+
+NEDC=${NEDC:-nedtool}
+MSGC=${MSGC:-opp_msgc}
+NEDTOOL=${NEDTOOL:-nedtool}
+GNED=${GNED:-gned}
+MAKEDEPEND=${MAKEDEPEND:-opp_makedep -Y --objdirtree}
+
+#----------------------
+# Check compiler
+#----------------------
+# icc, icpc: Intel compiler (further ones: Sun Studio: cxx, IBM: xlC)
+# TODO eliminate CC from the build process altogether, leave CXX only
+AC_PROG_CC(icc gcc cc xlc)
+AC_PROG_CXX(icpc g++ c++ cxx xlC)
+
+if test "$CXX" = "icpc"; then
+    # disable useless warnings and 'remarks' with the Intel compiler:
+    #
+    # warning #654: overloaded virtual function "NEDElement::setAttribute" is only partially overridden
+    # warning #177: label "yyerrlab1" was declared but never referenced
+    # remark #869: parameter "node" was never referenced
+    # remark #981: operands are evaluated in unspecified order
+    # remark #279: controlling expression is constant  (occurs in unfinished cppmsggenerator.cc code)
+    # remark #1572: floating-point equality and inequality comparisons are unreliable
+    # remark #424: extra ";" ignored
+    # remark #1682: implicit conversion of a 64-bit integral type to a smaller integral type (potential portability..
+    # remark #1683: explicit conversion of a 64-bit integral type to a smaller integral type (potential portability..
+    # remark #810: conversion from "unsigned int" to "char" may lose significant bits
+    # remark #810: conversion from "long" to "double" may lose significant bits
+    # remark #1418: external definition with no prior declaration
+    # remark #1419: external declaration in primary source file
+    # remark #383: value copied to temporary, reference to temporary used
+    #
+    #CFLAGS="$CFLAGS -wd654 -wd177 -wd869 -wd981 -wd279 -wd1572 -wd424 -wd1682 -wd1683 -wd810 -wd1418 -wd1419"
+
+    # -w1 disables all remarks
+    CFLAGS="$CFLAGS -w1 -wd654 -wd177"
+    USER_CFLAGS="$USER_CFLAGS -w1 -wd654 -wd177"
+fi
+
+AS=${AS:-as}
+AR=${AR:-ar cr}
+SHLIB_LD=${SHLIB_LD:-$CXX -shared}
+AC_PROG_RANLIB
+
+
+
+#----------------------
+# Test if "-fPIC" is needed for shared libs (there's a performance penalty if we use it unnecessarily)
+#----------------------
+# To test, we try to compile the following code into a shared library:
+#      int x;
+#      int getX() {return x;}
+#
+
+#if test "$build_shared_libs" = "if-not-windows" -o "$build_shared_libs" = "yes"; then
+#    if echo $CFLAGS | grep -i -- -fPIC >/dev/null 2>/dev/null; then :; else
+#        AC_MSG_NOTICE([NOTE: if you get problems building shared libraries (e.g. libnedxml.so),])
+#        AC_MSG_NOTICE([you may need to add -fPIC or -fpic to CFLAGS.])
+#    fi
+#fi
+
+AC_MSG_CHECKING(if shared libs need -fPIC)
+echo 'int x;' >conftest.cc
+echo 'int getX() {return x;}' >>conftest.cc
+fpic="x"
+if echo $CFLAGS | grep -i -- "-fPIC" >/dev/null 2>/dev/null; then
+   AC_MSG_RESULT([skip (already in CFLAGS)])
+   fpic=""
+fi
+if test "$fpic" = "x" && \
+   $CXX -c conftest.cc >/dev/null 2>/dev/null && \
+   $SHLIB_LD -o conftest.so conftest.o >/dev/null 2>/dev/null; \
+then
+   AC_MSG_RESULT(no)
+   fpic=""
+fi
+if test "$fpic" = "x" && \
+   $CXX -fPIC -c conftest.cc >/dev/null 2>/dev/null && \
+   $SHLIB_LD -fPIC -o conftest.so conftest.o >/dev/null 2>/dev/null; \
+then
+   AC_MSG_RESULT(yes)
+   fpic="-fPIC"
+fi
+if test "$fpic" = "x" && \
+   $CXX -fpic -c conftest.cc >/dev/null 2>/dev/null && \
+   $SHLIB_LD -fpic -o conftest.so conftest.o >/dev/null 2>/dev/null; \
+then
+   AC_MSG_RESULT(-fpic)
+   fpic="-fpic"
+fi
+if test "$fpic" = "x"; then
+   AC_MSG_RESULT(failure)
+   AC_MSG_WARN([COULD NOT FIGURE OUT HOW TO BUILD SHARED LIBRARY -- reverting to static libs])
+   build_shared_libs="no"
+else
+   CFLAGS="$CFLAGS $fpic"
+   USER_CFLAGS="$USER_CFLAGS $fpic"
+   SHLIB_LD="$SHLIB_LD $fpic"
+fi
+rm -f conftest.*
+
+
+#----------------------
+# Test if --export-dynamic or -E linker option is accepted and/or needed
+#----------------------
+# We want to be able to dynamically load extensions into simulation executables,
+# so we need to ensure that all symbols in the executable are visible to
+# dynamically loaded libraries. However, not all linkers need or support
+# --export-dynamic.
+# Strategy: we'll compile the following program into a shared library:
+#      void function_from_main();
+#      void some_func() {func_from_main();}
+# Then we *independently* compile with the following program:
+#      #include <dlfcn.h>
+#      void func_from_main() {}
+#      int main() {return dlopen("libconftest_a.so",RTLD_NOW)==0;}
+# And we expect to be able to run the program successfully.
+#
+
+# first check if we need "-ldl" for dlopen() [Laura Marie Feeney suggests it's not needed for FreeBSD]
+OPP_CHECK_LIB(dlopen, dlfcn.h, dlopen("",0), , , ldl_not_needed, ldl="", ldl="-ldl")
+
+# then go ahead
+AC_MSG_CHECKING(if --export-dynamic linker option is supported/needed)
+echo 'void func_from_main();' >conftest_a.cc
+echo 'void some_func() {func_from_main();}' >>conftest_a.cc
+echo '#include <dlfcn.h>' >conftest_m.cc
+echo '#include <stdio.h>' >>conftest_m.cc
+echo 'void func_from_main() {}' >>conftest_m.cc
+echo 'int main() {if (dlopen("./libconftest_a.so",RTLD_NOW)!=0) return 0; printf("%s\n",dlerror()); return 1;}' >>conftest_m.cc
+if $CXX -c conftest_a.cc >/dev/null 2>/dev/null && \
+   $CXX -c conftest_m.cc >/dev/null 2>/dev/null && \
+   $SHLIB_LD -o libconftest_a.so conftest_a.o >/dev/null 2>/dev/null; \
+then
+   silly_ok="no"
+   # 1st try.
+   if $CXX -o conftest conftest_m.o $ldl >/dev/null 2>/dev/null; then
+      if ./conftest >/dev/null 2>/dev/null; then
+         AC_MSG_RESULT(not needed)
+         silly_ok="yes"
+      fi
+   fi
+   # 2nd try.
+   if test $silly_ok = "no" && \
+      $CXX -o conftest -Wl,--export-dynamic conftest_m.o $ldl >/dev/null 2>/dev/null; \
+   then
+      if ./conftest >/dev/null 2>/dev/null; then
+         AC_MSG_RESULT(both)
+         LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+         silly_ok="yes"
+      fi
+   fi
+   # no solution found
+   if test $silly_ok = "no"; then
+      AC_MSG_RESULT(no solution found)
+      AC_MSG_WARN([No way was detected to export symbols from executables to shared])
+      AC_MSG_WARN([libraries. You probably will not be able to dynamically load])
+      AC_MSG_WARN([simple modules or other extensions written in C++ into simulation])
+      AC_MSG_WARN([programs like INET.])
+   fi
+else
+   AC_MSG_RESULT(test failed)
+fi
+rm -f conftest_a.* conftest_m.* libconftest_a.so conftest
+
+
+
+#----------------------
+# Test for "-z allextract" (Sun) or "--whole-archive" (GNU) linker option,
+#----------------------
+# Goal: to eliminate "silly linker problem", that is, to convince the linker
+# to include constructors of static C++ objects in statically linked libraries.
+# To test, we'll compile the following code into a static library:
+#      #include <stdio.h>
+#      class A { public: A() {printf("=WORKS=\n");} };
+#      static A a;
+# Then we link it with the following program:
+#      int main() {return 0;}
+# And check if the executable prints '=WORKS=' when run.
+#
+AC_MSG_CHECKING(for flags needed to link with static libs containing simple modules)
+echo '#include <stdio.h>' >conftest_a.cc
+echo 'class A { public: A() {printf("=WORKS=\n");} };' >>conftest_a.cc
+echo 'static A a;' >> conftest_a.cc
+echo 'int main() {return 0;}' >> conftest_m.cc
+if $CXX -c conftest_a.cc >/dev/null 2>/dev/null && \
+   $CXX -c conftest_m.cc >/dev/null 2>/dev/null && \
+   $AR libconftest_a.a conftest_a.o >/dev/null 2>/dev/null && \
+   $RANLIB libconftest_a.a >/dev/null 2>/dev/null; \
+then
+   silly_ok="no"
+   # 1st try.
+   if $CXX -o conftest conftest_m.o libconftest_a.a >/dev/null 2>/dev/null; then
+      if ./conftest 2>/dev/null | grep '=WORKS=' >/dev/null; then
+         AC_MSG_RESULT(none)
+         silly_ok="yes"
+      fi
+   fi
+
+   # 2nd try.
+   silly1=-Wl,--whole-archive
+   silly2=-Wl,--no-whole-archive
+   if test $silly_ok = "no" && \
+      $CXX -o conftest conftest_m.o $silly1 libconftest_a.a $silly2 >/dev/null 2>/dev/null && \
+      ./conftest 2>/dev/null | grep '=WORKS=' >/dev/null; \
+   then
+      AC_MSG_RESULT(--whole-archive)
+      AC_MSG_NOTICE([NOTE: Use the following syntax when linking with static libraries])
+      AC_MSG_NOTICE([containing simple modules and other dynamically registered components:])
+      AC_MSG_NOTICE([   $CXX ... $silly1 <libs> $silly2 ...])
+      silly_ok="yes"
+   fi
+
+   # 3rd try.
+   silly1=-Wl,-z,allextract
+   silly2=-Wl,-z,defaultextract
+   if test $silly_ok = "no" && \
+      $CXX -o conftest conftest_m.o $silly1 libconftest_a.a $silly2 >/dev/null 2>/dev/null && \
+      ./conftest 2>/dev/null | grep '=WORKS=' >/dev/null; \
+   then
+      AC_MSG_RESULT(--whole-archive)
+      AC_MSG_NOTICE([NOTE: Use the following syntax when linking with static libraries])
+      AC_MSG_NOTICE([containing simple modules and other dynamically registered components:])
+      AC_MSG_NOTICE([   $CXX ... $silly1 <libs> $silly2 ...])
+      silly_ok="yes"
+   fi
+
+   # no solution found
+   if test $silly_ok = "no"; then
+      AC_MSG_RESULT(no solution found)
+      AC_MSG_WARN([Avoid linking with static libraries containing simple modules])
+      AC_MSG_WARN([and other dynamically registered components. Those components])
+      AC_MSG_WARN([will not be found by the simulation program, because the linker])
+      AC_MSG_WARN([leaves them out of the executable.])
+   fi
+else
+   AC_MSG_RESULT(test failed)
+fi
+rm -f conftest_a.* conftest_m.* libconftest_a.a conftest
+
+
+#----------------------
+# Check Cygwin
+#----------------------
+if test "$WITH_PARSIM" = "yes" -a "$cygwin" = "yes"; then
+   AC_MSG_ERROR([WITH_PARSIM=yes not supported with Cygwin -- please edit configure.user!])
+fi
+
+#----------------------
+# set arch specific flags
+#----------------------
+CFLAGS="$CFLAGS $CFLAGS_ARCH"
+USER_CFLAGS="$USER_CFLAGS $CFLAGS_ARCH"
+
+#----------------------
+# Checks for programs.
+#----------------------
+
+AC_PROG_YACC
+if test "$YACC" = "yacc"; then
+   AC_MSG_ERROR([Bison not found, needed to build OMNeT++/OMNEST -- please install it!])
+fi
+AC_PROG_LEX
+
+# make must be GNU make
+AC_CHECK_PROG(MAKE, make , make, not found)
+if test "$MAKE" = "not found"; then
+   OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES make"
+   AC_MSG_ERROR(make program not found -- it is required to build OMNeT++/OMNEST, and also for model development.)
+else
+   if "$MAKE" --version 2>/dev/null | grep -i GNU >/dev/null; then :; else
+       AC_MSG_ERROR(GNU Make is required to build OMNeT++/OMNEST.)
+   fi
+fi
+
+# doxygen is used for generation of api doc
+AC_ARG_VAR(DOXYGEN, The Doxygen documentation tool)
+AC_CHECK_PROG(DOXYGEN, doxygen, doxygen, not found)
+
+if test "$DOXYGEN" = "not found"; then
+   OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES  doxygen"
+   AC_MSG_WARN(doxygen not found -- it is needed to create the OMNeT++/OMNEST API reference and also useful with opp_neddoc.)
+   AC_MSG_WARN(It is available from http://www.doxygen.org/)
+fi
+
+# perl is needed for opp_msgc
+AC_ARG_VAR(PERL, The Perl interpreter)
+AC_CHECK_PROG(PERL, perl, perl, not found)
+if test "$PERL" = "not found"; then
+   OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES  perl"
+   AC_MSG_WARN(Perl not found -- please install it! Perl is required by opp_msgc, opp_neddoc and other features.)
+fi
+
+# xsltproc
+AC_ARG_VAR(XSLTPROC, A command line xslt processor)
+AC_CHECK_PROG(XSLTPROC, xsltproc, xsltproc, not found)
+
+if test "$XSLTPROC" = "not found"; then
+   OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES  xsltproc"
+   AC_MSG_WARN(xsltproc from the libxml/libxslt packages not found -- it is needed by opp_neddoc.)
+   AC_MSG_WARN(You can get it from http://xmlsoft.org/XSLT/)
+fi
+
+
+# Ghostscript
+AC_ARG_VAR(GHOSTSCRIPT, Ghostscript is used for EPS-JPG conversion by opp_neddoc)
+AC_CHECK_PROG(GHOSTSCRIPT, gs, gs,)
+
+if test "$GHOSTSCRIPT" = ""; then
+   OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES  Ghostscript"
+   AC_MSG_WARN(Ghostscript not found -- it is needed by opp_neddoc to create diagrams.)
+fi
+
+# "convert" from ImageMagick
+AC_ARG_VAR(CONVERT, convert (ImageMagick) is used for EPS-JPG conversion by opp_neddoc)
+AC_CHECK_PROG(CONVERT, convert, convert,)
+
+if test "$CONVERT" = ""; then
+   OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES  ImageMagick"
+   AC_MSG_WARN(convert program from the ImageMagick package not found -- opp_neddoc may export broken network diagrams due to a Ghostscript problem.)
+fi
+
+# "dot" from Graphviz
+AC_ARG_VAR(DOT, Graph drawing program from the Graphviz package)
+AC_CHECK_PROG(DOT, dot, dot,)
+
+if test "$DOT" = ""; then
+   OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES  Graphviz"
+   AC_MSG_WARN(dot program from Graphviz not found -- it is needed by opp_neddoc to generate diagrams.)
+fi
+
+# giftrans
+AC_ARG_VAR(GIFTRANS, Utility to make GIFs transparent)
+AC_CHECK_PROG(GIFTRANS, giftrans, giftrans,)
+
+if test "$GIFTRANS" = ""; then
+   OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES  giftrans"
+   AC_MSG_WARN(giftrans not found -- opp_neddoc needs it to make the background of diagrams transparent.)
+fi
+
+#----------------------
+# Checks for standard libraries.
+#----------------------
+
+SYS_LIBS=""
+
+# math functions
+OPP_CHECK_LIB(math, math.h, floor(0), , , math_ok)
+if test $math_ok = no; then
+   OPP_CHECK_LIB(math, math.h, floor(0), , -lm, math_ok, SYS_LIBS="-lm $SYS_LIBS")
+fi
+if test $math_ok = no; then
+   AC_MSG_ERROR([Standard C math library -lm not found])
+fi
+
+# -lstdc++
+OPP_CHECK_LIB(standard C++ lib, iostream, /**/, , -lstdc++, stdcpp_ok, SYS_LIBS="-lstdc++ $SYS_LIBS")
+if test $stdcpp_ok = no; then
+   OPP_CHECK_LIB(standard C++ lib, iostream, /**/, , -lcxx, stdcpp_ok, SYS_LIBS="-lcxx $SYS_LIBS")
+fi
+if test $stdcpp_ok = no; then
+   OPP_CHECK_LIB(standard C++ lib, iostream, /**/, , -lcxa, stdcpp_ok, SYS_LIBS="-lcxa $SYS_LIBS")
+fi
+if test $stdcpp_ok = no; then
+   AC_MSG_ERROR([Standard C++ library -lstdc++ or -lcxx or -lcxa not found])
+fi
+
+# dlopen()
+OPP_CHECK_LIB(dlopen, dlfcn.h, dlopen("",0), , , dl_ok)
+if test $dl_ok = no; then
+   OPP_CHECK_LIB(dlopen, dlfcn.h, dlopen("",0), , -ldl, dl_ok, SYS_LIBS="-ldl $SYS_LIBS")
+fi
+if test $dl_ok = yes; then
+   HAVE_DLOPEN=1
+else
+   HAVE_DLOPEN=0
+   AC_MSG_WARN([no dlopen(): dynamic loading of libs not possible])
+fi
+
+# winsock (for MinGW)
+OPP_CHECK_LIB(winsock, winsock.h, socket(0,0,0), , -lwsock32, wsock_ok, SYS_LIBS="-lwsock32 $SYS_LIBS")
+
+#----------------------
+# Check for Tcl/Tk.
+#----------------------
+if test -n "$NO_TCL"; then
+
+# skip testing for TCL
+TKENV_IF_POSSIBLE=missing-library
+GNED_IF_POSSIBLE=missing-library
+SCALARS_IF_POSSIBLE=missing-library
+PLOVE_IF_POSSIBLE=missing-library
+
+# and build samples using Cmdenv (TBD)
+USERIF_LIBS='$(CMDENV_LIBS)'
+
+else  #find end of "if" after BLT testing
+
+OPP_CHECK_LIB(Tcl/Tk, tk.h, Tk_MainLoop(), $TK_CFLAGS, $TK_LIBS, tcltk_ok)
+if test $tcltk_ok = no; then
+    # try to find Tcl/Tk ourselves, but it usually needs to link with Xlib
+    AC_PATH_X
+    if test "$no_x" = "yes"; then
+        opp_x11inc=
+        opp_x11lib=
+    else
+       if test -n "$x_includes"; then
+           opp_x11inc="-I$x_includes"
+       fi
+       if test -n "$x_libraries"; then
+           opp_x11lib="-L$x_libraries -lX11"
+       fi
+    fi
+fi
+if test $tcltk_ok = no; then
+    OPP_CHECK_LIB(Tcl/Tk 8.5, tk.h, Tk_MainLoop(), $opp_x11inc $TK_CFLAGS, $opp_x11lib -ltk85 -ltcl85,
+                  tcltk_ok, TK_LIBS="$opp_x11lib -ltk85 -ltcl85")
+fi
+if test $tcltk_ok = no; then
+    OPP_CHECK_LIB(Tcl/Tk 8.5, tk.h, Tk_MainLoop(), $opp_x11inc $TK_CFLAGS, $opp_x11lib -ltk8.5 -ltcl8.5,
+                  tcltk_ok, TK_LIBS="$opp_x11lib -ltk8.5 -ltcl8.5")
+fi
+if test $tcltk_ok = no -a "$cygwin" = yes; then
+    OPP_CHECK_LIB(Tcl/Tk 8.5, tk.h, Tk_MainLoop(), $opp_x11inc $TK_CFLAGS, $opp_x11lib -lcygtk85 -lcygtcl85,
+                  tcltk_ok, TK_LIBS="$opp_x11lib -lcygtk85 -lcygtcl85")
+fi
+if test $tcltk_ok = no; then
+    OPP_CHECK_LIB(Tcl/Tk 8.4, tk.h, Tk_MainLoop(), $opp_x11inc $TK_CFLAGS, $opp_x11lib -ltk84 -ltcl84,
+                  tcltk_ok, TK_LIBS="$opp_x11lib -ltk84 -ltcl84")
+fi
+if test $tcltk_ok = no; then
+    OPP_CHECK_LIB(Tcl/Tk 8.4, tk.h, Tk_MainLoop(), $opp_x11inc $TK_CFLAGS, $opp_x11lib -ltk8.4 -ltcl8.4,
+                  tcltk_ok, TK_LIBS="$opp_x11lib -ltk8.4 -ltcl8.4")
+fi
+if test $tcltk_ok = no -a "$cygwin" = yes; then
+    OPP_CHECK_LIB(Tcl/Tk 8.4, tk.h, Tk_MainLoop(), $opp_x11inc $TK_CFLAGS, $opp_x11lib -lcygtk84 -lcygtcl84,
+                  tcltk_ok, TK_LIBS="$opp_x11lib -lcygtk84 -lcygtcl84")
+fi
+if test $tcltk_ok = no; then
+    # try to give a hint in the error message about the problem
+    if test "$no_x" = "yes"; then
+        if test "$cygwin" = yes; then
+            AC_MSG_ERROR([Cannot build Tcl/Tk apps, probably due to missing X11 headers -- try installing the XFree86 packages or get the X headers from www.omnetpp.org.])
+        else
+            AC_MSG_ERROR([Cannot build Tcl/Tk apps, probably due to misconfigured or missing X11 headers or libs. Check config.log for more info!])
+        fi
+    else
+        AC_MSG_ERROR([Tcl/Tk not found, needed for all GUI parts. Version 8.4.0+ and devel package required. Check config.log for more info!])
+    fi
+fi
+
+# Check for wish.
+AC_CHECK_PROGS(WISH, $WISH wish wish85 wish8.5 wish84 wish8.4 cygwish cygwish85 cygwish84, nope)
+if test "$WISH" = nope; then
+   AC_MSG_ERROR([Cannot find wish, part of Tcl/Tk -- maybe it is not in the PATH or has some exotic name (tested names were: wish wish85 wish8.5 wish84 wish8.4 cygwish cygwish85 cygwish84)])
+fi
+if echo 'puts OK; exit' | $WISH | grep OK >/dev/null; then :; else
+    AC_MSG_ERROR([Cannot run wish (wish command "puts OK; exit" failed): maybe you're not running X or DISPLAY environment variable not set?])
+fi
+if echo 'catch {package require Tk 8.4; puts OK}; exit' | $WISH | grep OK >/dev/null; then :; else
+    AC_MSG_ERROR([wish command "package require Tk 8.4" failed: probably old Tcl/Tk version, version 8.4.0+ required])
+fi
+
+# note: square brackets necessary otherwise M4 messes up the Tcl command
+[tcl_library=`echo 'puts [info library]; exit' | $WISH`]
+
+
+#----------------------
+# Check for BLT. $TK_CFLAGS and $TK_LIBS plus $BLT_LIBS should be enough
+#----------------------
+OPP_CHECK_LIB(BLT 2.4, blt.h, Blt_NameOfVector(0), $TK_CFLAGS, $BLT_LIBS $TK_LIBS, blt_ok)
+if test $blt_ok = no -a "$cygwin" = yes; then
+    bltlibs="-lBLT24 -mwindows -lwinspool"
+    OPP_CHECK_LIB(BLT 2.4, blt.h, Blt_NameOfVector(0), $TK_CFLAGS, $bltlibs $TK_LIBS, blt_ok, BLT_LIBS=$bltlibs)
+fi
+if test $blt_ok = no; then
+    bltlibs="-lBLT24"
+    OPP_CHECK_LIB(BLT 2.4, blt.h, Blt_NameOfVector(0), $TK_CFLAGS, $bltlibs $TK_LIBS, blt_ok, BLT_LIBS=$bltlibs)
+fi
+if test $blt_ok = no; then
+    bltlibs="-lBLT"
+    OPP_CHECK_LIB(BLT 2.4, blt.h, Blt_NameOfVector(0), $TK_CFLAGS, $bltlibs $TK_LIBS, blt_ok, BLT_LIBS=$bltlibs)
+fi
+if test $blt_ok = no; then
+    bltlibs="-lBLT2.4"
+    OPP_CHECK_LIB(BLT 2.4, blt.h, Blt_NameOfVector(0), $TK_CFLAGS, $bltlibs $TK_LIBS, blt_ok, BLT_LIBS=$bltlibs)
+fi
+if test $blt_ok = no; then
+    OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES  BLT"
+    AC_MSG_WARN([Cannot compile or link program with BLT: BLT or BLT-devel may not be installed -- check config.log for details. Plove and Scalars require BLT to build.])
+    HAVE_BLT=no
+fi
+if test $blt_ok = yes; then
+    HAVE_BLT=yes
+    if echo 'catch {package require BLT 2.4; puts OK}; exit' | $WISH | grep OK >/dev/null; then :; else
+        OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES  BLT"
+        AC_MSG_WARN([Tcl cannot load BLT (wish command "package require BLT 2.4" failed), probably BLT not installed correctly.])
+    fi
+fi
+
+# if we got through until here, enable building of the following progs:
+TKENV_IF_POSSIBLE=tkenv
+GNED_IF_POSSIBLE=gned
+SCALARS_IF_POSSIBLE=scalars
+PLOVE_IF_POSSIBLE=plove
+
+# and build samples using Tkenv
+USERIF_LIBS='$(TKENV_LIBS)'
+
+fi # end of Tcl tests ($NO_TCL=="" branch)
+
+#----------------------
+# Check for MPI.
+#----------------------
+OPP_CHECK_LIB(MPI, mpi.h, MPI_Init(0,0), $MPI_CFLAGS, $MPI_LIBS, mpi_ok)
+if test $mpi_ok = no; then
+   mpilibs="-pthread -llammpio -llammpi++ -lmpi -llam -laio -laio -lutil"
+   OPP_CHECK_LIB(MPI, mpi.h, MPI_Init(0,0), $MPI_CFLAGS, $mpilibs, mpi_ok, MPI_LIBS="$mpilibs")
+fi
+if test $mpi_ok = no; then
+   mpilibs="-lmpi++ -lmpi"   #SGI
+   OPP_CHECK_LIB(MPI, mpi.h, MPI_Init(0,0), $MPI_CFLAGS, $mpilibs, mpi_ok, MPI_LIBS="$mpilibs")
+fi
+if test $mpi_ok = yes; then
+   HAVE_MPI=yes
+else
+   HAVE_MPI=no
+   OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES  MPI (optional)"
+   AC_MSG_WARN([Optional package MPI (needed for parallel simulation) not found.])
+fi
+
+#----------------------
+# Check for XML parsers: EXPAT and/or LIBXML
+#----------------------
+OPP_CHECK_LIB(LibXML XML parser, libxml/parser.h, xmlInitParser(), $LIBXML_CFLAGS, $LIBXML_LIBS, libxml_ok)
+if test $libxml_ok = no; then
+    OPP_CHECK_LIB(LibXML XML parser, libxml/parser.h, xmlInitParser(), $LIBXML_CFLAGS, -lxml2,
+                  libxml_ok, LIBXML_LIBS="-lxml2")
+fi
+if test $libxml_ok = no; then
+    OPP_CHECK_LIB(LibXML XML parser, libxml/parser.h, xmlInitParser(), -I/usr/include/libxml2, -lxml2,
+                  libxml_ok, LIBXML_CFLAGS="-I/usr/include/libxml2" LIBXML_LIBS="-lxml2")
+fi
+OPP_CHECK_LIB(Expat XML parser, expat.h, XML_ParserCreate(0), $EXPAT_CFLAGS, $EXPAT_LIBS, expat_ok)
+if test $expat_ok = no; then
+    expatlibs="-lexpat"
+    OPP_CHECK_LIB(Expat XML parser, expat.h, XML_ParserCreate(0), $EXPAT_CFLAGS, $expatlibs, expat_ok, EXPAT_LIBS=$expatlibs)
+fi
+if test $libxml_ok = yes; then
+   AC_MSG_NOTICE([Using LibXML for XML parsing])
+   XMLPARSER=libxml
+   XML_CFLAGS=$LIBXML_CFLAGS
+   XML_LIBS=$LIBXML_LIBS
+elif test $expat_ok = yes; then
+   AC_MSG_NOTICE([Using Expat for XML parsing])
+   AC_MSG_WARN([DTD validation is not supported with Expat, only with LibXML!])
+   XMLPARSER=expat
+   XML_CFLAGS=$EXPAT_CFLAGS
+   XML_LIBS=$EXPAT_LIBS
+else
+   XMLPARSER=none
+   OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES  LibXML/Expat"
+   AC_MSG_WARN([No suitable XML parser found: no support for XML input])
+fi
+
+#----------------------
+# Check for Akaroa header and lib
+#----------------------
+OPP_CHECK_LIB(Akaroa, akaroa.H, AkObservation(0.0), $AKAROA_CFLAGS, $AKAROA_LIBS, akaroa_ok)
+if test $akaroa_ok = no; then
+    akaroalibs="-lakaroa -lfl"
+    OPP_CHECK_LIB(Akaroa, akaroa.H, AkObservation(0.0), $AKAROA_CFLAGS, $akaroalibs, akaroa_ok, AKAROA_LIBS="$akaroalibs")
+fi
+if test $akaroa_ok = yes; then
+   CFLAGS="$CFLAGS -DWITH_AKAROA"
+   SYS_LIBS="$SYS_LIBS $AKAROA_LIBS"
+else
+   OPP_PROBLEM_PACKAGES="$OPP_PROBLEM_PACKAGES  Akaroa (optional)"
+   AC_MSG_WARN([Optional package Akaroa not found])
+fi
+
+#----------------------
+# Linker flags
+#----------------------
+
+# on NT, set total stack size
+if test "$cygwin" = yes; then
+  LDFLAGS="$LDFLAGS -s -Xlinker --stack -Xlinker $CYGWIN_STACKSIZE"
+fi
+
+#----------------------
+# shared or static libraries
+#----------------------
+# If you change this setting, remember to delete the other set of libraries
+# (or at least the soft links from lib/).
+if test "$build_shared_libs" = if-not-windows; then
+    if test "$windows" = yes; then
+        build_shared_libs=no
+    else
+        build_shared_libs=yes
+    fi
+fi
+if test "$build_shared_libs" = yes; then
+    LIB_SUFFIX='$(SO_LIB_SUFFIX)'
+    if test "$cygwin" = yes; then
+        CFLAGS="$CFLAGS -DWIN32_DLL"
+        USER_CFLAGS="$USER_CFLAGS -DWIN32_DLL"
+    fi
+else
+    LIB_SUFFIX='$(A_LIB_SUFFIX)'
+fi
+
+#----------------------
+# Tcl code embedding.
+#----------------------
+
+if test "$EMBED_TCL_CODE" = yes; then
+   TKENV_EMBED_SUFFIX=-e
+   GNED_EMBED_SUFFIX=-e
+   SCALARS_EMBED_SUFFIX=-e
+   PLOVE_EMBED_SUFFIX=-e
+else
+   TKENV_EMBED_SUFFIX=
+   GNED_EMBED_SUFFIX=
+   SCALARS_EMBED_SUFFIX=
+   PLOVE_EMBED_SUFFIX=
+fi
+
+#----------------------
+# #defines in CFLAGS
+#----------------------
+if test "$WITH_PARSIM" = yes; then
+   CFLAGS="$CFLAGS -DWITH_PARSIM"
+   USER_CFLAGS="$USER_CFLAGS -DWITH_PARSIM"
+fi
+if test "$WITH_NETBUILDER" = yes; then
+   CFLAGS="$CFLAGS -DWITH_NETBUILDER"
+   USER_CFLAGS="$USER_CFLAGS -DWITH_NETBUILDER"
+fi
+
+
+
+#----------------------
+# Files to be generated
+#----------------------
+AC_CONFIG_FILES(
+  Makefile
+  src/cmdenv/Makefile
+  src/envir/Makefile
+  src/gned/Makefile
+  src/nedxml/Makefile
+  src/nedc/Makefile
+  src/scalars/Makefile
+  src/plove/Makefile
+  src/sim/Makefile
+  src/tkenv/Makefile
+  src/utils/Makefile
+  src/utils/opp_makemake
+  src/utils/opp_neddoc
+  test/core/runtest 
+  samples/aloha/Makefile
+  samples/cqn/Makefile
+  samples/dyna/Makefile
+  samples/fifo/Makefile
+  samples/hcube/Makefile
+  samples/hist/Makefile
+  samples/neddemo/Makefile
+  samples/p-to-p/Makefile
+  samples/queueing/Makefile
+  samples/routing/Makefile
+  samples/queues/Makefile
+  samples/tictoc/Makefile
+  samples/tokenring/Makefile
+  samples/sockets/Makefile
+  test/Makefile
+)
+
+
+#----------------------
+# Substitutions.
+#----------------------
+
+AC_SUBST(OMNETPP_VERSION)
+AC_SUBST(OMNETPP_EDITION)
+
+AC_SUBST(OMNETPP_BIN_DIR)
+AC_SUBST(OMNETPP_INCL_DIR)
+AC_SUBST(OMNETPP_LIB_DIR)
+AC_SUBST(OMNETPP_BITMAP_PATH)
+
+AC_SUBST(OMNETPP_SRC_DIR)
+AC_SUBST(OMNETPP_UTILS_DIR)
+AC_SUBST(OMNETPP_DOC_DIR)
+AC_SUBST(OMNETPP_SAMPLES_DIR)
+AC_SUBST(OMNETPP_TEST_DIR)
+
+AC_SUBST(YACC)
+AC_SUBST(LEX)
+AC_SUBST(CC)
+AC_SUBST(CXX)
+AC_SUBST(CPPFLAGS)
+AC_SUBST(CFLAGS)
+AC_SUBST(USER_CFLAGS)
+AC_SUBST(MYPWD)
+AC_SUBST(NEDC)
+AC_SUBST(MSGC)
+AC_SUBST(NEDTOOL)
+AC_SUBST(GNED)
+AC_SUBST(NEDCFLAGS)
+AC_SUBST(AS)
+AC_SUBST(AR)
+AC_SUBST(RANLIB)
+AC_SUBST(SHLIB_LD)
+AC_SUBST(WISH)
+AC_SUBST(MAKEDEPEND)
+AC_SUBST(XSLTPROC)
+AC_SUBST(GHOSTSCRIPT)
+AC_SUBST(CONVERT)
+AC_SUBST(GIFTRANS)
+AC_SUBST(DOT)
+
+AC_SUBST(DOXYGEN)
+
+AC_SUBST(A_LIB_SUFFIX)
+AC_SUBST(SO_LIB_SUFFIX)
+AC_SUBST(LIB_SUFFIX)
+AC_SUBST(EXE_SUFFIX)
+
+AC_SUBST(NO_TCL)
+AC_SUBST(HAVE_DLOPEN)
+AC_SUBST(TK_CFLAGS)
+AC_SUBST(TK_LIBS)
+AC_SUBST(HAVE_BLT)
+AC_SUBST(BLT_LIBS)
+AC_SUBST(HAVE_MPI)
+AC_SUBST(MPI_CFLAGS)
+AC_SUBST(MPI_LIBS)
+AC_SUBST(SYS_LIBS)
+
+AC_SUBST(XMLPARSER)
+AC_SUBST(XML_CFLAGS)
+AC_SUBST(XML_LIBS)
+
+AC_SUBST(AKAROA_CFLAGS)
+AC_SUBST(AKAROA_LIBS)
+
+AC_SUBST(TKENV_IF_POSSIBLE)
+AC_SUBST(GNED_IF_POSSIBLE)
+AC_SUBST(SCALARS_IF_POSSIBLE)
+AC_SUBST(PLOVE_IF_POSSIBLE)
+
+AC_SUBST(USERIF_LIBS)
+AC_SUBST(TKENV_EMBED_SUFFIX)
+AC_SUBST(GNED_EMBED_SUFFIX)
+AC_SUBST(SCALARS_EMBED_SUFFIX)
+AC_SUBST(PLOVE_EMBED_SUFFIX)
+
+AC_SUBST(OMNETPP_TKENV_DIR)
+AC_SUBST(OMNETPP_GNED_DIR)
+AC_SUBST(OMNETPP_SCALARS_DIR)
+AC_SUBST(OMNETPP_PLOVE_DIR)
+
+AC_SUBST(WITH_NETBUILDER)
+AC_SUBST(WITH_PARSIM)
+
+
+
+#
+# Generate files
+#
+AC_OUTPUT
+
+chmod +x src/utils/opp_makemake
+chmod +x src/utils/opp_test
+chmod +x src/utils/opp_makedep
+chmod +x src/utils/opp_neddoc
+chmod +x test/core/runtest
+
+(
+cd src/utils && cp ver.h.base ver.h && \
+echo "#define OMNETPP_RELEASE \"$OMNETPP_VERSION\"" >>ver.h && \
+echo "#define OMNETPP_EDITION \"$OMNETPP_EDITION\"" >>ver.h
+)
+
+#----------------------
+# Check $OPP_PROBLEM_PACKAGES
+#----------------------
+
+if test "$OPP_PROBLEM_PACKAGES" != ""; then
+      cat 1>&2 << EOT
+
+WARNING: The configuration script could not detect the following packages:
+
+  $OPP_PROBLEM_PACKAGES
+
+Scroll up to see the warning messages (use shift+PgUp key), and see config.log
+for more details. While you can use OMNeT++/OMNEST in the current
+configuration, please be aware that some functionality may be unavailable
+or incomplete.
+
+
+EOT
+fi
+
+
+#----------------------
+# Check if the path contains omnetpp/bin (it should)
+# Note: the method used here also works with Cygwin, but requires
+# write permission to $OMNETPP_BIN_DIR.
+#----------------------
+
+# first we need to expand the ${HOME} variable and make sure the dir exists..
+omnetpp_bin_dir=`eval echo $OMNETPP_BIN_DIR`
+if test ! -d $omnetpp_bin_dir; then
+   echo "PROBLEM: the $OMNETPP_BIN_DIR directory does not exist!"
+else
+  # ...then we create a small tmp file to check if the dir is in the path
+  probefile=__probe__
+  echo '' >$omnetpp_bin_dir/$probefile
+  chmod +x  $omnetpp_bin_dir/$probefile
+  if ($probefile) >/dev/null 2>/dev/null; then
+    echo "Your PATH contains $OMNETPP_BIN_DIR. Good!"
+  else
+    if test "$cygwin" = yes; then
+      opp_bin_dir=`cygpath -u $OMNETPP_BIN_DIR`
+      if test -z "$opp_bin_dir"; then opp_bin_dir=$OMNETPP_BIN_DIR; fi
+      cat 1>&2 << EOT
+
+WARNING: your PATH doesn't contain $opp_bin_dir!
+Add the following line to your startup file, $HOME/.bash_profile:
+  export PATH=\$PATH:$opp_bin_dir
+
+EOT
+    else
+      cat 1>&2 << EOT
+
+WARNING: your PATH doesn't contain $OMNETPP_BIN_DIR!
+Add the following line to your startup file:
+  export PATH=\$PATH:$OMNETPP_BIN_DIR  # .(bash_)profile if you use sh/bash
+  setenv PATH \$PATH:$OMNETPP_BIN_DIR  # .cshrc if you use csh,tcsh etc.
+
+EOT
+    fi
+  fi
+  rm $omnetpp_bin_dir/$probefile
+fi
+
+#----------------------
+# Check LD_LIBRARY path if we're building shared libs. This is not necessary
+# with Cygwin because Windows locates DLLs another way.
+#----------------------
+
+if test "$build_shared_libs" = yes -a "$cygwin" != yes; then
+  if echo $LD_LIBRARY_PATH | grep `eval echo $OMNETPP_LIB_DIR` >/dev/null; then
+    echo "Your LD_LIBRARY_PATH is set. Good!"
+  else
+    cat 1>&2 << EOT
+
+WARNING: You selected shared libraries in configure.user, but your
+LD_LIBRARY_PATH doesn't seem to contain $OMNETPP_LIB_DIR!
+
+So that the dynamic linker can find the OMNeT++/OMNEST shared libs, you either
+have to create symbolic links from /usr/lib to the OMNeT++/OMNEST shared
+libraries (you can do it as root), or better, set the LD_LIBRARY_PATH
+environment variable.
+
+Add the corresponding line to your startup file:
+  export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$OMNETPP_LIB_DIR
+         # into .(bash_)profile if you use bash or other sh-like shell
+  setenv LD_LIBRARY_PATH \$LD_LIBRARY_PATH:$OMNETPP_LIB_DIR
+         # into .cshrc if you use tcsh or other csh-like shell
+
+If you prefer static libraries, edit configure.user and change the
+build_shared_libs=yes line to build_shared_libs=no, then delete the shared
+libraries, re-run configure and make.
+EOT
+  fi
+fi
+
+#----------------------
+# Check if TCL_LIBRARY is set.
+#----------------------
+
+if test -n "$NO_TCL"; then
+
+    cat << EOT
+
+OMNeT++/OMNEST was configured without Tcl/Tk (\$NO_TCL set) -- GUI components
+will not be available. Also, sample simulations will not compile until you
+manually switch them over to Cmdenv, by editing their Makefiles.
+EOT
+
+elif test -z "$TCL_LIBRARY"; then
+
+    cat 1>&2 << EOT
+
+WARNING: The TCL_LIBRARY environment variable is not set, and without it
+OMNEST/OMNeT++ GUI programs may be unable to find the BLT library.
+Please set it to point to the following directory:
+    $tcl_library
+
+Add the corresponding line to your startup file:
+  export TCL_LIBRARY=$tcl_library
+         # into .(bash_)profile if you use bash or other sh-like shell
+  setenv TCL_LIBRARY $tcl_library
+         # into .cshrc if you use tcsh or other csh-like shell
+For additional information, please visit the "Common installation problems"
+page on www.omnetpp.org.
+EOT
+
+elif test ! -f "$TCL_LIBRARY/init.tcl"; then
+
+    cat 1>&2 << EOT
+
+WARNING: Your TCL_LIBRARY variable seems to be set incorrectly: there's no
+init.tcl file in that directory! (Usual location is /usr/lib/tcl8.4.)
+EOT
+
+else
+    echo
+    echo "TCL_LIBRARY is set. Good!"
+fi
+

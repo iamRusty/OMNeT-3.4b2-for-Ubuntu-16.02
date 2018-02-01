@@ -1,0 +1,31 @@
+%description:
+Tests cMessage.addLength().
+
+%activity:
+cMessage msg("msg");
+
+ev << msg.length() << endl;
+
+msg.addLength(100);
+ev << msg.length() << endl;
+
+msg.addLength(50);
+ev << msg.length() << endl;
+
+msg.addLength(-10);
+ev << msg.length() << endl;
+
+msg.addLength(-300);
+ev << msg.length() << endl;
+
+%exitcode: 1
+
+%contains-regex: stdout
+0
+100
+150
+140
+
+<!> Error .*length became negative
+
+

@@ -1,0 +1,193 @@
+Using OMNeT++ on Windows with the MinGW compiler
+================================================
+
+QUICKSTART
+
+If you're familiar with MinGW and eager to begin installation right now,
+here're instructions in nutshell. Otherwise, skip this section and
+continue reading from Introduction.
+
+  1. Install required software: MSYS and MinGW; Windows ports of bison and
+     flex (UnxUtils versions are fine); Tcl/Tk; Perl; Gnuplot. LibXML/LibXSLT
+     or at least Expat is also recommended. Optional libraries: Akaroa, MPI.
+  2. Make sure bison, flex, and Tcl/Tk are in the PATH, and the following
+     variables are set correctly: BISON_SIMPLE, TCL_LIBRARY.
+  3. Download OMNeT++ source package and unpack it (say into c:\omnetpp).
+  4. Add c:\omnetpp\bin your PATH.
+  5. Edit c:\omnetpp\configure.user according to your system. Use Windows-style
+     path names with *forward* slashes (/). If a directory name contains space,
+     use the short name (like C:/PROGRA~1).
+  6. Then fire up the MSYS shell and type the usual GNU stuff: ./configure,
+     make. If make goes through, you've made it!
+  7. Try that the sample simulations, gned, nedtool and opp_makemake work.
+
+If you get stuck at some step, refer to the detailed instructions below.
+
+
+0. Introduction: About MinGW
+
+MinGW (http://www.mingw.org) is a Win32 port of the GNU compiler toolset.
+It is distributed in two packages:
+
+  MinGW: A collection of freely available and freely distributable Windows
+  specific header files and import libraries combined with GNU toolsets that
+  allow one to produce native Windows programs that do not rely on any
+  3rd-party DLLs.
+
+  MSYS: A Minimal SYStem to allow the typical POSIX/Bourne configure script
+  to execute to create a Makefile so that you can execute make.
+
+MinGW is integrates better with Windows than Cygwin: the libraries you
+link with and the programs it produces are ordinary Windows libraries and
+programs, there is no "emulation layer" needed. On the other hand, MSYS
+does not provide such a complete Unix environment as Cygwin. OMNeT++ supports
+both -- choose which you like.
+
+MSYS doesn't contain all the utilities needed for compiling OMNeT++
+(namely, Bison and Flex are not included), so you'll need Windows ports
+of them. I found the UnxUtils package (http://unxutils.sourceforge.net/)
+just right.
+
+
+1. Prerequisites
+
+Windows NT compatible system is required: NT4.0, Windows 2000 or XP.
+Windows 95/98/ME won't do (they don't support the Win32 Fiber API used
+by OMNeT++.)
+
+
+2. Installing the compiler environment
+
+MSYS and MinGW must be installed before OMNeT++. The MinGW team provides
+detailed instructions for that.
+
+The installer will create an MinGW submenu in the Start menu, and also
+a desktop icon called `MSYS'. In the following description I'll assume
+you installed MinGW into c:\MinGW and MSYS to c:\MinGW\MSYS.
+
+You'll need to install Windows versions of the bison and flex Unix tools
+(UnxUtils versions are fine); Tcl/Tk binaries; Perl. It is
+also recommended that you install LibXML and LibXSLT, or at least Expat.
+Optionally you can install Akaroa and MPI. The file 3rdparty.txt file
+contains more info about these packages. Installing them in a directory
+whose name doesn't contain space will save you trouble.
+
+*** IMPORTANT ***
+  The TCL_LIBRARY environment variable is necessary for Tcl/Tk to operate
+  correctly. If the Tcl/Tk installer doesn't set this variable, you have to
+  do it manually.
+
+Starting MSYS will pop up a bash shell with all special environment
+variables set up for you. Within the bash shell, the MSYS directory
+(c:\MinGW\MSYS) will appear as "/". Your Windows drives will appear
+as /c/, /d/, etc., but MinGW understands the Windows notation too if you
+type it with *slashes* instead backslashes (c:/, d:/, etc.). Typing
+`pwd -W' will tell you the Windows name of the current directory.
+
+An editor will be required during the installation. For Unix diehards,
+MSYS contains vi or you can download emacs. A good NT port of emacs
+is available from http://www.cs.washington.edu/homes/voelker/ntemacs.html.
+
+It is a good idea to create a .bash_profile. This should be stored
+in each users home directory (/home/you, which maps to c:/mingw/msys/home/you;
+typing `cd' takes you right there.) For example, my .bash_profile contains:
+
+   export PS1='\w$ '
+   export PATH=/c/omnetpp/bin:$PATH:/c/Unxutils/usr/local/wbin
+   export BISON_SIMPLE=c:/Unxutils/usr/local/share/bison.simple
+   alias ls='ls -aF'
+   alias ll='ls -l'
+
+   cd /c/omnetpp
+   echo Welcome!
+
+*** IMPORTANT ***
+  If you set TCL_LIBRARY from your .bash_profile, use a *Windows-style*
+  directory name in it (ie. c:/... and not /c/...)!
+     TCL_LIBRARY=c:/Tcl/lib  # good
+     TCL_LIBRARY=/c/Tcl/lib  # WRONG!!!
+  This variable must be understood by the Tcl/Tk libraries which know
+  nothing about the MinGW magic.
+
+
+3. Installing OMNeT++
+
+Download the omnetpp source code and documentation from the omnetpp site.
+Make sure you select to download the unix archive omnetpp.tgz.
+
+From the startup menu open the bash shell. This a character based console,
+which works in a similar manner to the dos console window. The difference is
+that you use unix commands like ls, rm, mkdir, etc ...
+
+Copy the omnetpp archive to the directory where you want to install it
+(I'll assume c:/omnetpp here). Extract the archive using the command:
+
+    tar zxvf omnetpp.tgz
+
+A sub-directory called omnetpp will be created which will contain the simulator
+files. You should now add the following line to your startup file .bash_profile:
+
+    export PATH=$PATH:/c/omnetpp/bin
+
+For the variables to be included in the bash environment you will need to
+restart the bash shell before proceeding. All following commands in this
+section are entered on the bash command line.
+
+First you should check the configure.user file to make sure it contains the
+settings you need.
+
+*** IMPORTANT ***
+  Use Windows-style path names in configure.user! Use forward slashes (/)
+  instead of backslashes. If a directory name contains space, use the short
+  name (like C:/PROGRA~1).
+
+Note that currently you cannot build dynamic libraries (DLLs) from OMNeT++
+sources.
+
+Then the usual GNU-like stuff:
+    ./configure
+    make
+
+*** IMPORTANT ***
+  Your PATH *must* contain /c/omnetpp/bin for the compilation to be successful!
+
+You should now test all samples and check they run correctly. As an
+example, the dyna example is started by entering the following commands:
+
+    cd c:/omnetpp/samples/dyna
+    ./dyna
+
+By default the samples will run using the Tcl/Tk environment. You should see
+nice gui windows and dialogs.
+
+Then cd to the /c/omnetpp/bin directory and check that the programs work
+correctly.
+
+
+5. Reconfiguring the libraries
+
+If you need to recompile the OMNeT++ components with different flags (e.g.
+for debugging or optimized for speed), then cd to the top-level omnetpp
+directory, edit configure.user accordingly, then say:
+
+    ./configure
+    make clean
+    make
+
+If you want to recompile just a single library, then cd to the directory
+of the library and type:
+
+    make clean
+    make
+
+
+6. Comments
+
+Any questions concerning the use of MinGW should be directed to the MinGW
+mailing list. OMNeT++ specific questions should be directed to the mailing
+list at omnetpp-l@ecselists.eng.monash.edu.au.
+
+If you find any errors in this document please let me know.
+
+--
+Andras
