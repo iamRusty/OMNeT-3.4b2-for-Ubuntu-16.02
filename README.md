@@ -1,5 +1,5 @@
 # OMNeT 3.4b2 
-* Compiles in Ubuntu 16.02
+* Compiles in Ubuntu 16.02 with the default gxx-5.4
 
 ## How to install
 
